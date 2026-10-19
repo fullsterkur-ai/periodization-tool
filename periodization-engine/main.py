@@ -7,9 +7,15 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+import joblib
+import csv
+from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parent
 DATA_PATH = (  ROOT / "data" / "raw" / "programs_detailed_boostcamp_kaggle.csv")
+
+MODEL_PATH = ROOT / "models" / "prescription_model.joblib"
+ML_BUNDLE = None
 app = FastAPI(title="Periodization Engine API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
@@ -28,6 +34,23 @@ class AthleteInput(BaseModel):
     days_per_week: int = Field(default=3, ge=2, le=6)
     weeks: int = Field(default=8, ge=4, le=12)
     exercises_per_session: int = Field(default=5, ge=3, le=8)
+class WorkoutFeedback(BaseModel):
+    athlete_id: str
+    exercise_name: str
+    goal: str = "strength"
+    experience: str = "beginner"
+
+    planned_sets: int = Field(ge=1, le=10)
+    planned_reps: int = Field(ge=1, le=50)
+
+    completed_sets: int = Field(ge=0, le=10)
+    average_completed_reps: float = Field(ge=0, le=50)
+
+    effort: int = Field(
+        ge=1,
+        le=10,
+        description="Athlete-reported effort, from 1 (easy) to 10 (maximal)"
+    )
 
 def safe_text(value: Any) -> str:
     if value is None: return ""
@@ -114,6 +137,101 @@ def summarize_exercises(candidates: pd.DataFrame) -> pd.DataFrame:
     if result.empty: return result
     return result.sort_values(["record_count", "exercise_name"], ascending=[False, True])
 
+
+def normalize_ml_goal(goal: str) -> str:
+    value = normalize(goal)
+
+    if any(x in value for x in [
+        "strength", "powerlifting", "powerbuilding", "athletics"
+    ]):
+        return "strength"
+
+    if any(x in value for x in [
+        "hypertrophy", "bodybuilding", "muscle", "sculpting"
+    ]):
+        return "hypertrophy"
+
+    return "general_fitness"
+
+
+def normalize_ml_experience(experience: str) -> str:
+    value = normalize(experience)
+
+    if value in ("beginner", "novice"):
+        return "beginner"
+    if value == "intermediate":
+        return "intermediate"
+    if value == "advanced":
+        return "advanced"
+
+    return "unknown"
+
+
+def normalize_ml_equipment(equipment: str) -> str:
+    value = normalize(equipment)
+
+    if "dumbbell" in value:
+        return "dumbbell only"
+    if "garage" in value:
+        return "garage gym"
+    if "home" in value:
+        return "at home"
+    if "gym" in value:
+        return "full gym"
+
+    return "unknown"
+
+
+def load_ml_bundle():
+    global ML_BUNDLE
+
+    if ML_BUNDLE is None and MODEL_PATH.exists():
+        ML_BUNDLE = joblib.load(MODEL_PATH)
+
+    return ML_BUNDLE
+
+
+def predict_prescription(
+    athlete: AthleteInput,
+    exercise: dict,
+    week_no: int,
+    day_no: int,
+):
+    bundle = load_ml_bundle()
+
+    # If the model has not been trained yet, retain the existing
+    # dataset-based prescription as a fallback.
+    if bundle is None:
+        return None
+
+    features = pd.DataFrame([{
+        "goal": normalize_ml_goal(athlete.goal),
+        "experience": normalize_ml_experience(athlete.experience),
+        "equipment": normalize_ml_equipment(athlete.equipment),
+        "exercise_name": exercise["exercise_name"],
+        "program_length": athlete.weeks,
+        "time_per_workout": np.nan,
+        "week": week_no,
+        "day": day_no,
+    }])
+
+    predicted_sets = bundle["sets_model"].predict(features)[0]
+    predicted_sets = int(np.clip(round(float(predicted_sets)), 1, 10))
+
+    predicted_reps = None
+
+    if exercise["prescription_type"] == "reps":
+        predicted_reps = bundle["reps_model"].predict(features)[0]
+        predicted_reps = int(
+            np.clip(round(float(predicted_reps)), 1, 50)
+        )
+
+    return {
+        "sets": predicted_sets,
+        "reps": predicted_reps,
+        "model_used": True,
+    }
+
 def make_plan(athlete: AthleteInput) -> dict[str, Any]:
     try: df = load_dataset()
     except (FileNotFoundError, ValueError, pd.errors.ParserError) as exc: raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -124,7 +242,8 @@ def make_plan(athlete: AthleteInput) -> dict[str, Any]:
     else:
         selection_note = "Candidates were filtered using available goal, experience, and equipment metadata."
     if catalogue.empty: raise HTTPException(status_code=422, detail="No usable exercises found. Check exercise_name, sets, and reps in the CSV.")
-    chosen = catalogue.head(athlete.exercises_per_session).to_dict(orient="records")
+    # Keep the full ranked catalogue; select a different subset for each day.
+    catalogue = catalogue.reset_index(drop=True)
     weeks = []
     for week_no in range(1, athlete.weeks + 1):
         is_deload = week_no % 4 == 0 or week_no == athlete.weeks
@@ -136,33 +255,170 @@ def make_plan(athlete: AthleteInput) -> dict[str, Any]:
             phase, phase_note, set_multiplier = "Intensification", "Prioritize quality work and gradually increase difficulty when appropriate.", 1.0
         else:
             phase, phase_note, set_multiplier = "Realization / consolidation", "Consolidate progress without forcing maximal attempts.", 1.0
+        
         sessions = []
+
+        
         for day_no in range(1, athlete.days_per_week + 1):
             exercises = []
+            
+            # Select a different slice of the ranked catalogue for each day.
+            start = (day_no - 1) * athlete.exercises_per_session
+
+            day_catalogue = catalogue.iloc[
+                start : start + athlete.exercises_per_session
+            ]
+
+            chosen = day_catalogue.to_dict(orient="records")
+
+            # Assign exercises to different day groups instead of repeating
+            # the same top-ranked exercises in every session.
+            day_catalogue = catalogue.iloc[
+                (day_no - 1)::athlete.days_per_week
+            ].head(athlete.exercises_per_session)
+
+            chosen = day_catalogue.to_dict(orient="records")
+
             for item in chosen:
-                entry = {"exercise_name": item["exercise_name"], "sets": max(1, int(math.floor(int(item["sets"]) * set_multiplier))),
-                         "prescription_type": item["prescription_type"], "dataset_intensity_0_10": item["dataset_intensity_0_10"]}
-                if item["prescription_type"] == "time": entry["duration_seconds"] = item["duration_seconds"]
-                else: entry["reps"] = item["reps"]
-                entry["progression_rule"] = ("Deload: do not increase load; prioritize recovery and technique." if is_deload else
-                    "If all work is completed with good technique and manageable effort, increase the next exposure conservatively; otherwise repeat or reduce.")
+                ml_prediction = predict_prescription(
+                    athlete=athlete,
+                    exercise=item,
+                    week_no=week_no,
+                    day_no=day_no,
+                )
+
+                # Use ML predictions if the trained model is available.
+                if ml_prediction is not None:
+                    base_sets = ml_prediction["sets"]
+                else:
+                    base_sets = int(item["sets"])
+
+                final_sets = max(
+                    1,
+                    int(math.floor(base_sets * set_multiplier))
+                )
+
+                entry = {
+                    "exercise_name": item["exercise_name"],
+                    "sets": final_sets,
+                    "prescription_type": item["prescription_type"],
+                    "dataset_intensity_0_10": item["dataset_intensity_0_10"],
+                    "prescription_source": (
+                        "random_forest_ml"
+                        if ml_prediction is not None
+                        else "dataset_median_fallback"
+                    ),
+                }
+
+                if item["prescription_type"] == "time":
+                    entry["duration_seconds"] = item["duration_seconds"]
+                else:
+                    if ml_prediction is not None:
+                        entry["reps"] = ml_prediction["reps"]
+                    else:
+                        entry["reps"] = item["reps"]
+
+                entry["progression_rule"] = (
+                    "Deload: do not increase load; prioritize recovery and technique."
+                    if is_deload
+                    else
+                    "If all work is completed with good technique and manageable "
+                    "effort, increase the next exposure conservatively; otherwise "
+                    "repeat or reduce."
+                )
+
                 exercises.append(entry)
-            sessions.append({"day": day_no, "exercises": exercises})
-        weeks.append({"week": week_no, "phase": phase, "is_deload": is_deload, "phase_note": phase_note, "sessions": sessions})
-    return {"athlete": athlete.model_dump(), "engine_type": "Data-driven exercise retrieval + rule-based periodization",
-            "dataset_rows_after_exact_deduplication": int(len(df)), "candidate_exercise_count": int(len(catalogue)),
-            "selection_note": selection_note,
-            "limitations": ["Research/demo prototype, not a clinically validated prescription.",
-                "Dataset intensity remains on its original 0-10 scale; it is not assumed to be RPE.",
-                "No individual athlete outcome data is used to train a progression predictor.",
-                "Progression guidance is rule-based and does not calculate loads from a generic 1RM.",
-                "Exercise selection currently ranks by record frequency, not muscle-group balance."], "weeks": weeks}
+
+            sessions.append({
+                "day": day_no,
+                "exercises": exercises
+            })
+
+        weeks.append({
+            "week": week_no,
+            "phase": phase,
+            "is_deload": is_deload,
+            "phase_note": phase_note,
+            "sessions": sessions
+        })
+
+    return {
+        "athlete": athlete.model_dump(),
+        "engine_type": "Random Forest prescription prediction + rule-based periodization",
+        "ml_model_loaded": load_ml_bundle() is not None,
+        "dataset_rows_after_exact_deduplication": int(len(df)),
+        "candidate_exercise_count": int(len(catalogue)),
+        "selection_note": selection_note,
+        "limitations": [
+            "Research/demo prototype, not a clinically validated prescription.",
+            "Dataset intensity remains on its original 0-10 scale; it is not assumed to be RPE.",
+            "The ML models learn dataset prescription patterns, not individual athlete outcomes.",
+            "Progression guidance remains rule-based and does not calculate training loads.",
+            "Exercise selection currently ranks by record frequency, not muscle-group balance."
+        ],
+        "weeks": weeks
+    }
 
 @app.get("/health")
 def health(): return {"status": "ok", "dataset_path": str(DATA_PATH), "dataset_exists": DATA_PATH.exists()}
 
 @app.post("/generate-plan")
 def generate_plan(athlete: AthleteInput): return make_plan(athlete)
+
+FEEDBACK_PATH = ROOT / "data" / "processed" / "workout_feedback.csv"
+
+
+@app.post("/workout-feedback")
+def record_workout_feedback(feedback: WorkoutFeedback):
+    # Simple demonstration rules; these are not learned ML predictions.
+    if feedback.completed_sets < feedback.planned_sets:
+        action = "reduce"
+        reason = "Not all planned sets were completed."
+
+    elif feedback.average_completed_reps < feedback.planned_reps:
+        action = "repeat"
+        reason = "The planned repetition target was not achieved."
+
+    elif feedback.effort >= 9:
+        action = "repeat"
+        reason = "The reported effort was very high."
+
+    else:
+        action = "progress"
+        reason = "The planned work was completed without a very high effort rating."
+
+    FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        **feedback.model_dump(),
+        "recommended_action": action,
+        "reason": reason,
+    }
+
+    file_exists = FEEDBACK_PATH.exists()
+
+    with FEEDBACK_PATH.open(
+        "a",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+        writer = csv.DictWriter(file, fieldnames=record.keys())
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow(record)
+
+    return {
+        "recommended_action": action,
+        "reason": reason,
+        "feedback_saved": True,
+        "message": (
+            "Feedback recorded. This recommendation uses explicit rules, "
+            "not the Random Forest model."
+        ),
+    }
 
 if __name__ == "__main__":
     import uvicorn
