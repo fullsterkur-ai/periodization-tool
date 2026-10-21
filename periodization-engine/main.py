@@ -15,6 +15,96 @@ ROOT = Path(__file__).resolve().parent
 DATA_PATH = (  ROOT / "data" / "raw" / "programs_detailed_boostcamp_kaggle.csv")
 
 MODEL_PATH = ROOT / "models" / "prescription_model.joblib"
+FEEDBACK_PATH = ROOT / "data" / "processed" / "workout_feedback.csv"
+STATE_PATH = ROOT / "data" / "processed" / "athlete_exercise_state.csv"
+
+
+def load_adaptive_state(athlete_id: str, exercise_name: str):
+    """Return the latest saved prescription for this athlete and exercise."""
+    if not STATE_PATH.exists():
+        return None
+
+    try:
+        state_df = pd.read_csv(STATE_PATH)
+    except (pd.errors.EmptyDataError, pd.errors.ParserError):
+        return None
+
+    required = {
+        "athlete_id", "exercise_name",
+        "next_sets", "next_reps", "updated_at", "last_action"
+    }
+    if not required.issubset(state_df.columns):
+        return None
+
+    matches = state_df[
+        state_df["athlete_id"].map(normalize).eq(normalize(athlete_id))
+        & state_df["exercise_name"].map(normalize).eq(normalize(exercise_name))
+    ]
+
+    if matches.empty:
+        return None
+
+    row = matches.sort_values("updated_at").iloc[-1]
+
+    return {
+        "next_sets": int(row["next_sets"]),
+        "next_reps": int(row["next_reps"]),
+        "updated_at": str(row["updated_at"]),
+        "last_action": str(row["last_action"]),
+    }
+
+
+def save_adaptive_state(feedback: WorkoutFeedback, action: str):
+    """Save the next target prescription after receiving workout feedback."""
+    next_sets = feedback.planned_sets
+    next_reps = feedback.planned_reps
+
+    if action == "progress":
+        # Conservative demo policy: add one rep, up to the API's limit.
+        next_reps = min(50, feedback.planned_reps + 1)
+
+    elif action == "reduce":
+        # If the athlete could not complete all sets, reduce the next set target.
+        next_sets = max(1, feedback.planned_sets - 1)
+
+    updated_at = datetime.now(timezone.utc).isoformat()
+
+    new_row = {
+        "athlete_id": feedback.athlete_id,
+        "exercise_name": feedback.exercise_name,
+        "next_sets": next_sets,
+        "next_reps": next_reps,
+        "last_action": action,
+        "updated_at": updated_at,
+    }
+
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    if STATE_PATH.exists():
+        try:
+            state_df = pd.read_csv(STATE_PATH)
+        except (pd.errors.EmptyDataError, pd.errors.ParserError):
+            state_df = pd.DataFrame()
+    else:
+        state_df = pd.DataFrame()
+
+    if not state_df.empty and {
+        "athlete_id", "exercise_name"
+    }.issubset(state_df.columns):
+        same_entry = (
+            state_df["athlete_id"].map(normalize).eq(normalize(feedback.athlete_id))
+            & state_df["exercise_name"].map(normalize).eq(normalize(feedback.exercise_name))
+        )
+        state_df = state_df.loc[~same_entry].copy()
+
+    state_df = pd.concat(
+        [state_df, pd.DataFrame([new_row])],
+        ignore_index=True
+    )
+
+    state_df.to_csv(STATE_PATH, index=False)
+
+    return new_row
 ML_BUNDLE = None
 app = FastAPI(title="Periodization Engine API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -28,6 +118,7 @@ LEVEL_ALIASES = {"beginner": ["beginner", "novice"], "novice": ["novice", "begin
 EQUIPMENT_ALIASES = {"full gym": ["full gym", "gym"], "garage gym": ["garage gym", "garage"], "at home": ["at home", "home"], "dumbbell only": ["dumbbell only", "dumbbell"]}
 
 class AthleteInput(BaseModel):
+    athlete_id: str = Field(default="demo-athlete")
     goal: str = Field(default="strength", description="strength, hypertrophy, or general_fitness")
     experience: str = Field(default="beginner", description="beginner, intermediate, or advanced")
     equipment: str = Field(default="Full Gym", description="Equipment available to athlete")
@@ -287,12 +378,30 @@ def make_plan(athlete: AthleteInput) -> dict[str, Any]:
                     day_no=day_no,
                 )
 
-                # Use ML predictions if the trained model is available.
+                # Start with the Random Forest prediction or dataset fallback.
                 if ml_prediction is not None:
                     base_sets = ml_prediction["sets"]
+                    base_reps = ml_prediction["reps"]
+                    prescription_source = "random_forest_ml"
                 else:
                     base_sets = int(item["sets"])
+                    base_reps = item["reps"]
+                    prescription_source = "dataset_median_fallback"
 
+                # Only apply saved rep-based feedback to rep-based exercises.
+                adaptive_state = None
+                if item["prescription_type"] == "reps":
+                    adaptive_state = load_adaptive_state(
+                        athlete.athlete_id,
+                        item["exercise_name"],
+                    )
+
+                if adaptive_state is not None:
+                    base_sets = adaptive_state["next_sets"]
+                    base_reps = adaptive_state["next_reps"]
+                    prescription_source = "feedback_adapted"
+
+                # Apply deload volume reduction after loading the saved target.
                 final_sets = max(
                     1,
                     int(math.floor(base_sets * set_multiplier))
@@ -303,20 +412,23 @@ def make_plan(athlete: AthleteInput) -> dict[str, Any]:
                     "sets": final_sets,
                     "prescription_type": item["prescription_type"],
                     "dataset_intensity_0_10": item["dataset_intensity_0_10"],
-                    "prescription_source": (
-                        "random_forest_ml"
-                        if ml_prediction is not None
-                        else "dataset_median_fallback"
-                    ),
+                    "prescription_source": prescription_source,
                 }
+
+                if adaptive_state is not None:
+                    entry["feedback_adaptation"] = {
+                        "last_action": adaptive_state["last_action"],
+                        "updated_at": adaptive_state["updated_at"],
+                        "note": (
+                            "Saved athlete feedback supplied the base prescription; "
+                            "periodization and deload rules are still applied."
+                        ),
+                    }
 
                 if item["prescription_type"] == "time":
                     entry["duration_seconds"] = item["duration_seconds"]
                 else:
-                    if ml_prediction is not None:
-                        entry["reps"] = ml_prediction["reps"]
-                    else:
-                        entry["reps"] = item["reps"]
+                    entry["reps"] = int(base_reps)
 
                 entry["progression_rule"] = (
                     "Deload: do not increase load; prioritize recovery and technique."
@@ -409,14 +521,21 @@ def record_workout_feedback(feedback: WorkoutFeedback):
             writer.writeheader()
 
         writer.writerow(record)
+        next_prescription = save_adaptive_state(feedback, action)
 
-    return {
+        return {
         "recommended_action": action,
         "reason": reason,
         "feedback_saved": True,
+        "adaptive_state_saved": True,
+        "next_prescription": {
+            "sets": next_prescription["next_sets"],
+            "reps": next_prescription["next_reps"],
+        },
         "message": (
-            "Feedback recorded. This recommendation uses explicit rules, "
-            "not the Random Forest model."
+            "Feedback recorded. The saved next prescription can be used "
+            "when generating another plan for the same athlete and exercise. "
+            "The recommendation uses explicit rules, not the Random Forest model."
         ),
     }
 

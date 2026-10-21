@@ -1,2 +1,3 @@
 timestamp,athlete_id,exercise_name,goal,experience,planned_sets,planned_reps,completed_sets,average_completed_reps,effort,recommended_action,reason
 2026-10-19T18:43:02.628699+00:00,string,string,strength,beginner,1,1,10,50.0,1,progress,The planned work was completed without a very high effort rating.
+2026-10-20T18:32:17.323057+00:00,demo-athlete,Bench Press (Barbell),strength,beginner,3,9,3,9.0,6,progress,The planned work was completed without a very high effort rating.
