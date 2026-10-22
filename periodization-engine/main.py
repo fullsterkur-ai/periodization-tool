@@ -10,6 +10,12 @@ from pydantic import BaseModel, Field
 import joblib
 import csv
 from datetime import datetime, timezone
+from periodization import (
+    choose_action,
+    progress_load,
+    make_week_schedule,
+)
+import json
 
 ROOT = Path(__file__).resolve().parent
 DATA_PATH = (  ROOT / "data" / "raw" / "programs_detailed_boostcamp_kaggle.csv")
@@ -17,7 +23,9 @@ DATA_PATH = (  ROOT / "data" / "raw" / "programs_detailed_boostcamp_kaggle.csv")
 MODEL_PATH = ROOT / "models" / "prescription_model.joblib"
 FEEDBACK_PATH = ROOT / "data" / "processed" / "workout_feedback.csv"
 STATE_PATH = ROOT / "data" / "processed" / "athlete_exercise_state.csv"
-
+PROGRAM_STATE_PATH = (
+    ROOT / "data" / "processed" / "athlete_program_state.json"
+)
 
 def load_adaptive_state(athlete_id: str, exercise_name: str):
     """Return the latest saved prescription for this athlete and exercise."""
@@ -105,6 +113,75 @@ def save_adaptive_state(feedback: WorkoutFeedback, action: str):
     state_df.to_csv(STATE_PATH, index=False)
 
     return new_row
+
+def load_program_state(athlete_id: str) -> dict[str, Any]:
+    """Load the saved programme state for one athlete."""
+    default_state = {
+        "athlete_id": athlete_id,
+        "weeks": None,
+        "current_week": 1,
+        "completed_weeks": [],
+        "current_loads_kg": {},
+        "updated_at": None,
+    }
+
+    if not PROGRAM_STATE_PATH.exists():
+        return default_state
+
+    try:
+        with PROGRAM_STATE_PATH.open("r", encoding="utf-8") as file:
+            all_states = json.load(file)
+    except (OSError, json.JSONDecodeError):
+        return default_state
+
+    if not isinstance(all_states, dict):
+        return default_state
+
+    saved = all_states.get(normalize(athlete_id))
+
+    if not isinstance(saved, dict):
+        return default_state
+
+    state = {**default_state, **saved}
+
+    if not isinstance(state.get("current_loads_kg"), dict):
+        state["current_loads_kg"] = {}
+
+    if not isinstance(state.get("completed_weeks"), list):
+        state["completed_weeks"] = []
+
+    return state
+
+
+def save_program_state(athlete_id: str, state: dict[str, Any]) -> None:
+    """Persist programme state without overwriting other athletes."""
+    PROGRAM_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    all_states = {}
+
+    if PROGRAM_STATE_PATH.exists():
+        try:
+            with PROGRAM_STATE_PATH.open("r", encoding="utf-8") as file:
+                loaded = json.load(file)
+
+            if isinstance(loaded, dict):
+                all_states = loaded
+
+        except (OSError, json.JSONDecodeError):
+            all_states = {}
+
+    state["athlete_id"] = athlete_id
+    state["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    all_states[normalize(athlete_id)] = state
+
+    temp_path = PROGRAM_STATE_PATH.with_suffix(".tmp")
+
+    with temp_path.open("w", encoding="utf-8") as file:
+        json.dump(all_states, file, indent=2, ensure_ascii=False)
+
+    temp_path.replace(PROGRAM_STATE_PATH)
+
 ML_BUNDLE = None
 app = FastAPI(title="Periodization Engine API", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -117,14 +194,35 @@ GOAL_TERMS = {
 LEVEL_ALIASES = {"beginner": ["beginner", "novice"], "novice": ["novice", "beginner"], "intermediate": ["intermediate"], "advanced": ["advanced"]}
 EQUIPMENT_ALIASES = {"full gym": ["full gym", "gym"], "garage gym": ["garage gym", "garage"], "at home": ["at home", "home"], "dumbbell only": ["dumbbell only", "dumbbell"]}
 
+
 class AthleteInput(BaseModel):
     athlete_id: str = Field(default="demo-athlete")
-    goal: str = Field(default="strength", description="strength, hypertrophy, or general_fitness")
-    experience: str = Field(default="beginner", description="beginner, intermediate, or advanced")
-    equipment: str = Field(default="Full Gym", description="Equipment available to athlete")
+    goal: str = Field(default="strength")
+    experience: str = Field(default="beginner")
+    equipment: str = Field(default="Full Gym")
+
     days_per_week: int = Field(default=3, ge=2, le=6)
     weeks: int = Field(default=8, ge=4, le=12)
+    week_number: int | None = Field(default=None, ge=1, le=12)
     exercises_per_session: int = Field(default=5, ge=3, le=8)
+
+    # Enter working loads in kilograms, keyed by exercise name.
+    # Example: {"Barbell Bench Press": 40}
+    starting_loads_kg: dict[str, float] = Field(default_factory=dict)
+
+    # Demonstration inputs for simulated athlete condition.
+    fatigue: int = Field(default=3, ge=1, le=10)
+    performance_declining: bool = False
+    simulation_completed_all_sets: bool = True
+    simulation_completed_target_reps: bool = True
+    simulation_effort: int = Field(default=6, ge=1, le=10)
+
+    # Exact exercise names to exclude from this demo plan.
+    excluded_exercises: list[str] = Field(default_factory=list)
+
+    # Displayed in the plan; not treated as medical advice.
+    restriction_notes: str = ""
+
 class WorkoutFeedback(BaseModel):
     athlete_id: str
     exercise_name: str
@@ -323,153 +421,260 @@ def predict_prescription(
         "model_used": True,
     }
 
+
+
 def make_plan(athlete: AthleteInput) -> dict[str, Any]:
-    try: df = load_dataset()
-    except (FileNotFoundError, ValueError, pd.errors.ParserError) as exc: raise HTTPException(status_code=500, detail=str(exc)) from exc
+    try:
+        df = load_dataset()
+    except (FileNotFoundError, ValueError, pd.errors.ParserError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    # Load the athlete's saved programme state.
+    state = load_program_state(athlete.athlete_id)
+
+    # Reset programme-week tracking if the requested programme duration changes.
+    if state.get("weeks") != athlete.weeks:
+        state["weeks"] = athlete.weeks
+        state["current_week"] = 1
+        state["completed_weeks"] = []
+
+    saved_week = int(state.get("current_week", 1))
+    week_no = athlete.week_number if athlete.week_number is not None else saved_week
+
+    if week_no > athlete.weeks:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Week {week_no} exceeds the {athlete.weeks}-week programme.",
+        )
+
+    # Restore saved loads, then apply any manual starting-load overrides.
+    current_loads = {
+        normalize(name): float(load)
+        for name, load in state.get("current_loads_kg", {}).items()
+        if load is not None
+        and math.isfinite(float(load))
+        and float(load) > 0
+    }
+
+    for name, load in athlete.starting_loads_kg.items():
+        if load is not None and math.isfinite(float(load)) and float(load) > 0:
+            current_loads[normalize(name)] = float(load)
+
+    state["current_loads_kg"] = current_loads
+
     catalogue = summarize_exercises(candidate_rows(df, athlete))
+
     if catalogue.empty:
         catalogue = summarize_exercises(df)
-        selection_note = "Requested filters did not match usable records; used the overall dataset catalogue. Check metadata labels."
+        selection_note = (
+            "The requested metadata filters returned no usable records. "
+            "The overall dataset catalogue was used instead."
+        )
     else:
-        selection_note = "Candidates were filtered using available goal, experience, and equipment metadata."
-    if catalogue.empty: raise HTTPException(status_code=422, detail="No usable exercises found. Check exercise_name, sets, and reps in the CSV.")
-    # Keep the full ranked catalogue; select a different subset for each day.
+        selection_note = (
+            "Exercise candidates were filtered using available program metadata."
+        )
+
+    if catalogue.empty:
+        raise HTTPException(
+            status_code=422,
+            detail="No usable exercises found in the program dataset.",
+        )
+
     catalogue = catalogue.reset_index(drop=True)
-    weeks = []
-    for week_no in range(1, athlete.weeks + 1):
-        is_deload = week_no % 4 == 0 or week_no == athlete.weeks
-        if is_deload:
-            phase, phase_note, set_multiplier = "Deload / recovery", "Reduce volume; use easy, technically controlled effort.", 0.6
-        elif week_no <= 3:
-            phase, phase_note, set_multiplier = "Accumulation", "Build consistent training volume; progress only after well-completed sessions.", 1.0
-        elif week_no <= max(5, athlete.weeks - 2):
-            phase, phase_note, set_multiplier = "Intensification", "Prioritize quality work and gradually increase difficulty when appropriate.", 1.0
-        else:
-            phase, phase_note, set_multiplier = "Realization / consolidation", "Consolidate progress without forcing maximal attempts.", 1.0
-        
-        sessions = []
 
-        
-        for day_no in range(1, athlete.days_per_week + 1):
-            exercises = []
-            
-            # Select a different slice of the ranked catalogue for each day.
-            start = (day_no - 1) * athlete.exercises_per_session
+    excluded = {normalize(name) for name in athlete.excluded_exercises}
 
-            day_catalogue = catalogue.iloc[
-                start : start + athlete.exercises_per_session
-            ]
+    if excluded:
+        catalogue = catalogue[
+            ~catalogue["exercise_name"].map(normalize).isin(excluded)
+        ].reset_index(drop=True)
 
-            chosen = day_catalogue.to_dict(orient="records")
+    if catalogue.empty:
+        raise HTTPException(
+            status_code=422,
+            detail="All available exercises were excluded. Change the exclusions.",
+        )
 
-            # Assign exercises to different day groups instead of repeating
-            # the same top-ranked exercises in every session.
-            day_catalogue = catalogue.iloc[
-                (day_no - 1)::athlete.days_per_week
-            ].head(athlete.exercises_per_session)
+    # Keep the existing demo action visible, but do not use it to
+    # automatically increase loads just because a plan was generated.
+    simulated_action, simulated_reason = choose_action(
+        completed_all_sets=athlete.simulation_completed_all_sets,
+        completed_target_reps=athlete.simulation_completed_target_reps,
+        effort=athlete.simulation_effort,
+        fatigue=athlete.fatigue,
+    )
 
-            chosen = day_catalogue.to_dict(orient="records")
+    schedule = make_week_schedule(
+        weeks=athlete.weeks,
+        fatigue=athlete.fatigue,
+        performance_declining=athlete.performance_declining,
+    )
 
-            for item in chosen:
-                ml_prediction = predict_prescription(
-                    athlete=athlete,
-                    exercise=item,
-                    week_no=week_no,
-                    day_no=day_no,
-                )
+    week_info = schedule[week_no - 1]
+    is_deload = week_info["is_deload"]
+    set_multiplier = week_info["set_multiplier"]
 
-                # Start with the Random Forest prediction or dataset fallback.
-                if ml_prediction is not None:
-                    base_sets = ml_prediction["sets"]
-                    base_reps = ml_prediction["reps"]
-                    prescription_source = "random_forest_ml"
-                else:
-                    base_sets = int(item["sets"])
-                    base_reps = item["reps"]
-                    prescription_source = "dataset_median_fallback"
+    sessions = []
 
-                # Only apply saved rep-based feedback to rep-based exercises.
-                adaptive_state = None
-                if item["prescription_type"] == "reps":
-                    adaptive_state = load_adaptive_state(
-                        athlete.athlete_id,
-                        item["exercise_name"],
-                    )
+    for day_no in range(1, athlete.days_per_week + 1):
+        day_catalogue = catalogue.iloc[
+            (day_no - 1)::athlete.days_per_week
+        ].head(athlete.exercises_per_session)
 
-                if adaptive_state is not None:
-                    base_sets = adaptive_state["next_sets"]
-                    base_reps = adaptive_state["next_reps"]
-                    prescription_source = "feedback_adapted"
+        exercises = []
 
-                # Apply deload volume reduction after loading the saved target.
-                final_sets = max(
-                    1,
-                    int(math.floor(base_sets * set_multiplier))
-                )
+        for item in day_catalogue.to_dict(orient="records"):
+            exercise_name = item["exercise_name"]
+            exercise_key = normalize(exercise_name)
 
-                entry = {
-                    "exercise_name": item["exercise_name"],
-                    "sets": final_sets,
-                    "prescription_type": item["prescription_type"],
-                    "dataset_intensity_0_10": item["dataset_intensity_0_10"],
-                    "prescription_source": prescription_source,
-                }
+            # Use the latest saved sets/reps when feedback exists.
+            adaptive = load_adaptive_state(
+                athlete.athlete_id,
+                exercise_name,
+            )
 
-                if adaptive_state is not None:
-                    entry["feedback_adaptation"] = {
-                        "last_action": adaptive_state["last_action"],
-                        "updated_at": adaptive_state["updated_at"],
-                        "note": (
-                            "Saved athlete feedback supplied the base prescription; "
-                            "periodization and deload rules are still applied."
-                        ),
-                    }
+            base_sets = (
+                adaptive["next_sets"]
+                if adaptive is not None
+                else int(item["sets"])
+            )
 
-                if item["prescription_type"] == "time":
-                    entry["duration_seconds"] = item["duration_seconds"]
-                else:
-                    entry["reps"] = int(base_reps)
+            base_reps = (
+                adaptive["next_reps"]
+                if adaptive is not None
+                else item["reps"]
+            )
 
-                entry["progression_rule"] = (
-                    "Deload: do not increase load; prioritize recovery and technique."
-                    if is_deload
-                    else
-                    "If all work is completed with good technique and manageable "
-                    "effort, increase the next exposure conservatively; otherwise "
-                    "repeat or reduce."
-                )
+            final_sets = max(
+                1,
+                int(math.floor(base_sets * set_multiplier)),
+            )
 
-                exercises.append(entry)
+            last_action = (
+                adaptive["last_action"]
+                if adaptive is not None
+                else "awaiting_feedback"
+            )
 
-            sessions.append({
-                "day": day_no,
-                "exercises": exercises
-            })
+            entry = {
+                "exercise_name": exercise_name,
+                "sets": final_sets,
+                "prescription_type": item["prescription_type"],
+                "dataset_intensity_0_10": item["dataset_intensity_0_10"],
+                "prescription_source": (
+                    "saved_adaptive_feedback"
+                    if adaptive is not None
+                    else "dataset_median_plus_rule_based_periodization"
+                ),
+                "phase": week_info["phase"],
+                "is_deload": is_deload,
+                "progression_action": (
+                        "maintain_during_deload"
+                        if is_deload
+                        else "awaiting_workout_feedback"
+                    ),
+                "last_recorded_action": last_action,
+                "progression_reason": (
+                        "Deload week: avoid load increases."
+                        if is_deload
+                        else (
+                            "Previous feedback is available, but this week's workout "
+                            "must still be recorded before progression is applied."
+                        )
+                    ),
+            }
 
-        weeks.append({
-            "week": week_no,
-            "phase": phase,
-            "is_deload": is_deload,
-            "phase_note": phase_note,
-            "sessions": sessions
+            if item["prescription_type"] == "time":
+                entry["duration_seconds"] = item["duration_seconds"]
+            else:
+                entry["reps"] = int(base_reps)
+
+            current_load = current_loads.get(exercise_key)
+
+            if current_load is not None:
+                entry["load_kg"] = round(current_load, 2)
+                entry["load_source"] = "saved_or_athlete_supplied_working_load"
+
+                # A proposed load increase is not applied until actual
+                # workout feedback and week completion are recorded.
+                entry["next_exposure_load_kg"] = round(current_load, 2)
+                entry["load_progression_status"] = "pending_workout_feedback"
+            else:
+                entry["load_kg"] = None
+                entry["load_source"] = "not_provided"
+                entry["next_exposure_load_kg"] = None
+                entry["load_progression_status"] = "starting_load_required"
+
+            exercises.append(entry)
+
+        sessions.append({
+            "day": day_no,
+            "exercises": exercises,
         })
+
+    # Persist known loads and programme duration. Generating a plan
+    # deliberately does NOT mark the week complete or advance the week.
+    state["current_loads_kg"] = current_loads
+    save_program_state(athlete.athlete_id, state)
 
     return {
         "athlete": athlete.model_dump(),
-        "engine_type": "Random Forest prescription prediction + rule-based periodization",
+        "programme": {
+            "total_weeks": athlete.weeks,
+            "requested_week": week_no,
+            "saved_current_week": state["current_week"],
+            "completed_weeks": state["completed_weeks"],
+            "week_completed": week_no in state["completed_weeks"],
+            "advance_requires_completion_confirmation": True,
+        },
+        "engine_type": (
+            "Rule-based periodization with dataset-informed prescriptions "
+            "and saved athlete state"
+        ),
         "ml_model_loaded": load_ml_bundle() is not None,
         "dataset_rows_after_exact_deduplication": int(len(df)),
         "candidate_exercise_count": int(len(catalogue)),
         "selection_note": selection_note,
+        "simulated_condition": {
+            "fatigue": athlete.fatigue,
+            "performance_declining": athlete.performance_declining,
+            "completed_all_sets": athlete.simulation_completed_all_sets,
+            "completed_target_reps": athlete.simulation_completed_target_reps,
+            "effort": athlete.simulation_effort,
+            "demo_recommended_action": simulated_action,
+            "demo_reason": simulated_reason,
+            "note": (
+                "These simulation inputs are for demonstration only. "
+                "They do not confirm that the workout was actually completed."
+            ),
+        },
+        "restrictions": {
+            "excluded_exercises": athlete.excluded_exercises,
+            "notes": athlete.restriction_notes,
+            "warning": (
+                "Exercise exclusions are user-selected demo filters, not "
+                "medical clearance or a determination that other exercises "
+                "are safe for an injury."
+            ),
+        },
         "limitations": [
-            "Research/demo prototype, not a clinically validated prescription.",
-            "Dataset intensity remains on its original 0-10 scale; it is not assumed to be RPE.",
-            "The ML models learn dataset prescription patterns, not individual athlete outcomes.",
-            "Progression guidance remains rule-based and does not calculate training loads.",
-            "Exercise selection currently ranks by record frequency, not muscle-group balance."
+            "Research/demo prototype, not clinically validated.",
+            "Dataset intensity remains on its original 0-10 scale; it is not assumed to be RPE or a percentage of 1RM.",
+            "The Random Forest does not control this plan.",
+            "Load progression is not applied automatically; actual workout feedback and completion confirmation are required.",
+            "Exercises without a supplied or saved working load retain a null load.",
+            "Exercise selection does not yet optimize muscle-group balance.",
         ],
-        "weeks": weeks
+        "weeks": [{
+            "week": week_no,
+            "phase": week_info["phase"],
+            "is_deload": is_deload,
+            "phase_note": week_info["phase_note"],
+            "sessions": sessions,
+        }],
     }
+
 
 @app.get("/health")
 def health(): return {"status": "ok", "dataset_path": str(DATA_PATH), "dataset_exists": DATA_PATH.exists()}

@@ -1,0 +1,12 @@
+{
+  "demo-athlete": {
+    "athlete_id": "demo-athlete",
+    "weeks": 4,
+    "current_week": 1,
+    "completed_weeks": [],
+    "current_loads_kg": {
+      "bench press (barbell)": 40.0
+    },
+    "updated_at": "2026-10-22T10:21:08.497671+00:00"
+  }
+}
