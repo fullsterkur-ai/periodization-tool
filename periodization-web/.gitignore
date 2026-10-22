@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+periodization-engine/data/raw/programs_detailed_boostcamp_kaggle.csv
+periodization-engine/models/prescription_model.joblib
