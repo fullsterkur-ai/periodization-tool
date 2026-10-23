@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import ModelTraining from "./ModelTraining";
 import {
   generatePlan,
   submitWorkoutFeedback,
@@ -246,7 +247,7 @@ function switchAthlete(athleteId: string) {
 
         <p className="nav-label">WORKSPACE</p>
 
-        {["Overview", "Training Plan", "Periodization", "Progress"].map(
+        {["Overview", "Training Plan", "Periodization", "Model Training","Progress"].map(
           (item) => (
             <button
               key={item}
@@ -281,7 +282,11 @@ function switchAthlete(athleteId: string) {
         </header>
 
         <section className="page">
-          <div className="page-heading">
+  {activePage === "Model Training" ? (
+    <ModelTraining />
+  ) : (
+    <>
+      <div className="page-heading">
             <div>
               <p className="eyebrow">PERSONALIZED TRAINING</p>
               <h1>{activePage}</h1>
@@ -643,11 +648,13 @@ function switchAthlete(athleteId: string) {
                 </div>
               )}
             </>
-          )}
-        </section>
-      </main>
-    </div>
-  );
+                  )}
+    </>
+  )}
+      </section>
+    </main>
+  </div>
+);
 }
 
 function Stat({

@@ -65,3 +65,69 @@ export function completeWeek(
     week_number,
   });
 }
+
+export interface TrainingDashboardData {
+  model_type: string;
+  random_state: number;
+  max_train_rows: number;
+  evaluation_method: string;
+  features: string[];
+  targets: {
+    sets: TrainingTargetData;
+    reps: TrainingTargetData;
+  };
+  limitations: string[];
+}
+
+export interface TrainingTargetData {
+  metrics: {
+    target: string;
+    train_rows: number;
+    test_rows: number;
+    mae: number;
+    rmse: number;
+  };
+  diagnostics: {
+    actual_vs_predicted: {
+      actual: number;
+      predicted: number;
+    }[];
+    residual_histogram: {
+      counts: number[];
+      bin_edges: number[];
+    };
+    feature_importance: {
+      feature: string;
+      importance: number;
+    }[];
+    learning_curve: {
+  training_rows: number[];
+  train_mae: number[];
+  validation_mae: number[];
+  validation_method: string;
+  diagnostic_estimators: number;
+  max_rows: number;
+};
+  };
+}
+
+export async function fetchTrainingDashboard(): Promise<TrainingDashboardData> {
+  const response = await fetch(
+    `${API_BASE_URL}/training-dashboard`,
+    {
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      typeof data?.detail === "string"
+        ? data.detail
+        : `Could not load training results (${response.status}).`
+    );
+  }
+
+  return data as TrainingDashboardData;
+}

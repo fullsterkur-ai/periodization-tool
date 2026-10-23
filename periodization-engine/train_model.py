@@ -149,7 +149,7 @@ def prepare_data():
 
 
 
-def build_pipeline():
+def build_pipeline(n_estimators: int = 60):
     preprocessing = ColumnTransformer(
         transformers=[
             (
@@ -178,13 +178,110 @@ def build_pipeline():
     return Pipeline([
         ("preprocessing", preprocessing),
         ("model", RandomForestRegressor(
-            n_estimators=60,
+            n_estimators=n_estimators,
             min_samples_leaf=3,
             max_features=0.8,
             n_jobs=-1,
             random_state=RANDOM_STATE,
         )),
     ])
+
+def calculate_learning_curve(train_data, target):
+    """
+    Evaluate MAE at increasing training sizes.
+
+    Validation programme titles are kept separate from diagnostic
+    training programme titles. This is a diagnostic curve, not the
+    final held-out test evaluation.
+    """
+    diagnostic_max_rows = min(len(train_data), 20_000)
+    diagnostic_estimators = 20
+
+    splitter = GroupShuffleSplit(
+        n_splits=1,
+        test_size=0.20,
+        random_state=RANDOM_STATE + 1,
+    )
+
+    curve_train_pos, curve_val_pos = next(
+        splitter.split(
+            train_data[FEATURES],
+            train_data[target],
+            groups=train_data["title"],
+        )
+    )
+
+    curve_train = train_data.iloc[curve_train_pos]
+    curve_validation = train_data.iloc[curve_val_pos]
+
+    if len(curve_train) < 20 or len(curve_validation) < 10:
+        raise ValueError(
+            f"Not enough data to calculate the {target} learning curve."
+        )
+
+    max_rows = min(len(curve_train), diagnostic_max_rows)
+
+    fractions = [0.10, 0.25, 0.50, 0.75, 1.00]
+
+    training_sizes = sorted({
+        min(max_rows, max(20, int(max_rows * fraction)))
+        for fraction in fractions
+    })
+
+    # Nested, reproducible training subsets.
+    ordered_train = curve_train.sample(
+        frac=1,
+        random_state=RANDOM_STATE,
+    )
+
+    train_mae = []
+    validation_mae = []
+    actual_training_sizes = []
+
+    for size in training_sizes:
+        subset = ordered_train.iloc[:size]
+
+        diagnostic_model = build_pipeline(
+            n_estimators=diagnostic_estimators
+        )
+
+        diagnostic_model.fit(
+            subset[FEATURES],
+            subset[target],
+        )
+
+        train_predictions = diagnostic_model.predict(
+            subset[FEATURES]
+        )
+
+        validation_predictions = diagnostic_model.predict(
+            curve_validation[FEATURES]
+        )
+
+        train_error = mean_absolute_error(
+            subset[target],
+            train_predictions,
+        )
+
+        validation_error = mean_absolute_error(
+            curve_validation[target],
+            validation_predictions,
+        )
+
+        actual_training_sizes.append(int(len(subset)))
+        train_mae.append(round(float(train_error), 4))
+        validation_mae.append(round(float(validation_error), 4))
+
+    return {
+        "training_rows": actual_training_sizes,
+        "train_mae": train_mae,
+        "validation_mae": validation_mae,
+        "validation_method": (
+            "20% of the outer training data, grouped by programme title"
+        ),
+        "diagnostic_estimators": diagnostic_estimators,
+        "max_rows": diagnostic_max_rows,
+    }
 
 
 def train_target(df, target, train_indices, test_indices):
@@ -207,9 +304,12 @@ def train_target(df, target, train_indices, test_indices):
             random_state=RANDOM_STATE,
         )
 
+    learning_curve = calculate_learning_curve(train, target)
+
     model = build_pipeline()
     model.fit(train[FEATURES], train[target])
 
+    
     predictions = model.predict(test[FEATURES])
 
     metrics = {
@@ -224,7 +324,61 @@ def train_target(df, target, train_indices, test_indices):
         ))), 3),
     }
 
-    return model, metrics
+    # Keep a reproducible sample for frontend evaluation graphs.
+    rng = np.random.default_rng(RANDOM_STATE)
+    sample_size = min(500, len(test))
+    sample_positions = np.sort(
+        rng.choice(len(test), size=sample_size, replace=False)
+    )
+
+    actual_sample = test[target].to_numpy()[sample_positions]
+    predicted_sample = predictions[sample_positions]
+
+    residuals = test[target].to_numpy() - predictions
+    histogram_counts, histogram_edges = np.histogram(
+        residuals, bins=20
+    )
+
+    # Extract feature importance from the fitted Random Forest pipeline.
+    preprocessing = model.named_steps["preprocessing"]
+    forest = model.named_steps["model"]
+
+    feature_names = preprocessing.get_feature_names_out()
+    importance_order = np.argsort(forest.feature_importances_)[::-1][:15]
+
+    feature_importance = [
+        {
+            "feature": str(feature_names[index]),
+            "importance": round(
+                float(forest.feature_importances_[index]), 6
+            ),
+        }
+        for index in importance_order
+    ]
+
+    diagnostics = {
+        "actual_vs_predicted": [
+            {
+                "actual": round(float(actual), 3),
+                "predicted": round(float(predicted), 3),
+            }
+            for actual, predicted in zip(
+                actual_sample, predicted_sample
+            )
+        ],
+        "residual_histogram": {
+            "counts": histogram_counts.tolist(),
+            "bin_edges": [
+                round(float(edge), 3)
+                for edge in histogram_edges
+            ],
+        },
+        "feature_importance": feature_importance,
+        "learning_curve": learning_curve,
+    }
+
+    return model, metrics, diagnostics
+
 
 
 def main():
@@ -244,14 +398,15 @@ def main():
     train_indices = df.index[train_pos]
     test_indices = df.index[test_pos]
 
-    sets_model, sets_metrics = train_target(
+    
+    sets_model, sets_metrics, sets_diagnostics = train_target(
         df, "sets", train_indices, test_indices
     )
 
-    # Only positive, plausible repetition counts are used for this model.
-    reps_model, reps_metrics = train_target(
+    reps_model, reps_metrics, reps_diagnostics = train_target(
         df, "reps", train_indices, test_indices
     )
+
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -276,6 +431,41 @@ def main():
         json.dumps(bundle["metrics"], indent=2),
         encoding="utf-8",
     )
+    
+    dashboard_data = {
+        "model_type": "RandomForestRegressor",
+        "random_state": RANDOM_STATE,
+        "max_train_rows": MAX_TRAIN_ROWS,
+        "evaluation_method": (
+            "GroupShuffleSplit: held-out programme titles"
+        ),
+        "features": FEATURES,
+        "targets": {
+            "sets": {
+                "metrics": sets_metrics,
+                "diagnostics": sets_diagnostics,
+            },
+            "reps": {
+                "metrics": reps_metrics,
+                "diagnostics": reps_diagnostics,
+            },
+        },
+        "limitations": [
+            "Predicts recorded dataset prescriptions, not athlete outcomes.",
+            "Feature importance describes model reliance, not causation.",
+            "Actual-versus-predicted points are a reproducible sample "
+            "from the held-out evaluation set.",
+        ],
+    }
+
+    dashboard_path = MODEL_DIR / "training_dashboard.json"
+    dashboard_path.write_text(
+        json.dumps(dashboard_data, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"Dashboard data saved to: {dashboard_path}")
+
 
     print("\nTraining complete.")
     print(f"Model saved to: {MODEL_PATH}")
