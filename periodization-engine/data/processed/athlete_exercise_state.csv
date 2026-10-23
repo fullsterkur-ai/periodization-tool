@@ -1,2 +1,16 @@
 athlete_id,exercise_name,next_sets,next_reps,last_action,updated_at
-demo-athlete,Bench Press (Barbell),3,10,progress,2026-10-20T18:32:17.323858+00:00
+demo-athlete,Bench Press (Barbell),3,12,progress,2026-10-22T20:27:17.541258+00:00
+demo-athlete,Lateral Raise (Dumbbell),3,12,progress,2026-10-22T20:27:19.096776+00:00
+demo-athlete,Romanian Deadlift (Barbell),3,12,progress,2026-10-22T20:27:21.253118+00:00
+demo-athlete,Standing Calf Raise,3,12,progress,2026-10-22T20:27:22.883889+00:00
+demo-athlete,Lateral Raise (Cable),3,12,progress,2026-10-22T20:27:24.964853+00:00
+demo-athlete,Squat (Barbell),3,12,progress,2026-10-22T20:27:54.900357+00:00
+demo-athlete,Lat Pulldown,3,12,progress,2026-10-22T20:27:56.047148+00:00
+demo-athlete,Incline Bench Press (Dumbbell),3,12,progress,2026-10-22T20:27:57.724842+00:00
+demo-athlete,Seated Row (Cable),3,12,progress,2026-10-22T20:27:58.855953+00:00
+demo-athlete,Overhead Press (Barbell),3,12,progress,2026-10-22T20:28:01.317055+00:00
+demo-athlete,Leg Extension,3,12,progress,2026-10-22T20:28:06.429212+00:00
+demo-athlete,Deadlift (Barbell),3,12,progress,2026-10-22T20:28:07.943897+00:00
+demo-athlete,Tricep Pushdown (Cable),3,12,progress,2026-10-22T20:28:09.115236+00:00
+demo-athlete,Leg Curl,3,12,progress,2026-10-22T20:28:10.896184+00:00
+demo-athlete,Leg Press,3,12,progress,2026-10-22T20:28:12.631310+00:00

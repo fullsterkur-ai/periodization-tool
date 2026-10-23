@@ -195,6 +195,10 @@ LEVEL_ALIASES = {"beginner": ["beginner", "novice"], "novice": ["novice", "begin
 EQUIPMENT_ALIASES = {"full gym": ["full gym", "gym"], "garage gym": ["garage gym", "garage"], "at home": ["at home", "home"], "dumbbell only": ["dumbbell only", "dumbbell"]}
 
 
+class CompleteWeekRequest(BaseModel):
+    athlete_id: str
+    week_number: int = Field(..., ge=1, le=12)
+
 class AthleteInput(BaseModel):
     athlete_id: str = Field(default="demo-athlete")
     goal: str = Field(default="strength")
@@ -228,6 +232,7 @@ class WorkoutFeedback(BaseModel):
     exercise_name: str
     goal: str = "strength"
     experience: str = "beginner"
+    week_number: int | None = Field(default=None, ge=1, le=12)
 
     planned_sets: int = Field(ge=1, le=10)
     planned_reps: int = Field(ge=1, le=50)
@@ -615,6 +620,17 @@ def make_plan(athlete: AthleteInput) -> dict[str, Any]:
 
     # Persist known loads and programme duration. Generating a plan
     # deliberately does NOT mark the week complete or advance the week.
+    # Save the exercises expected for this week's feedback.
+    planned_by_week = state.setdefault("planned_exercises_by_week", {})
+
+    planned_by_week[str(week_no)] = sorted({
+        normalize(exercise["exercise_name"])
+        for session in sessions
+        for exercise in session["exercises"]
+    })
+
+    # Persist known loads and programme state.
+    # Generating a plan does not complete or advance the week.
     state["current_loads_kg"] = current_loads
     save_program_state(athlete.athlete_id, state)
 
@@ -682,12 +698,9 @@ def health(): return {"status": "ok", "dataset_path": str(DATA_PATH), "dataset_e
 @app.post("/generate-plan")
 def generate_plan(athlete: AthleteInput): return make_plan(athlete)
 
-FEEDBACK_PATH = ROOT / "data" / "processed" / "workout_feedback.csv"
-
-
 @app.post("/workout-feedback")
 def record_workout_feedback(feedback: WorkoutFeedback):
-    # Simple demonstration rules; these are not learned ML predictions.
+    # These are explicit demonstration rules, not ML predictions.
     if feedback.completed_sets < feedback.planned_sets:
         action = "reduce"
         reason = "Not all planned sets were completed."
@@ -702,46 +715,404 @@ def record_workout_feedback(feedback: WorkoutFeedback):
 
     else:
         action = "progress"
-        reason = "The planned work was completed without a very high effort rating."
+        reason = (
+            "The planned work was completed without "
+            "a very high effort rating."
+        )
 
+    # 1. Check the athlete's saved programme.
+    program_state = load_program_state(feedback.athlete_id)
+
+    if program_state.get("weeks") is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Generate a programme before recording workout feedback.",
+        )
+
+    current_week = int(program_state.get("current_week", 1))
+    week_number = feedback.week_number or current_week
+
+    if week_number != current_week:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"The athlete's current week is {current_week}. "
+                f"Feedback for Week {week_number} cannot be recorded."
+            ),
+        )
+
+    # 2. Verify that this exercise belongs to the generated week.
+    planned_by_week = program_state.get("planned_exercises_by_week", {})
+    planned_exercises = planned_by_week.get(str(week_number))
+
+    if not planned_exercises:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "The planned exercises for this week have not been saved. "
+                "Add the planned_exercises_by_week code to make_plan(), "
+                "then generate this week again before submitting feedback."
+            ),
+        )
+
+    exercise_key = normalize(feedback.exercise_name)
+
+    if exercise_key not in planned_exercises:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "This exercise is not in the saved plan for "
+                f"Week {week_number}."
+            ),
+        )
+
+    # Use the saved current week if the request omitted week_number.
+    saved_feedback = feedback.model_copy(
+        update={"week_number": week_number}
+    )
+
+    # 3. Read existing feedback without assuming its CSV schema.
     FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+    if FEEDBACK_PATH.exists():
+        try:
+            feedback_df = pd.read_csv(FEEDBACK_PATH)
+        except (pd.errors.EmptyDataError, pd.errors.ParserError):
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "The existing workout feedback CSV could not be read. "
+                    "Check the file before submitting more feedback."
+                ),
+            )
+    else:
+        feedback_df = pd.DataFrame()
+
+    # Older CSV files may not contain these columns yet.
+    for column in [
+        "athlete_id",
+        "exercise_name",
+        "week_number",
+    ]:
+        if column not in feedback_df.columns:
+            feedback_df[column] = pd.NA
+
+    # 4. Prevent duplicate feedback for the same exercise in this week.
+    if not feedback_df.empty:
+        same_athlete = (
+            feedback_df["athlete_id"]
+            .fillna("")
+            .astype(str)
+            .map(normalize)
+            .eq(normalize(saved_feedback.athlete_id))
+        )
+
+        same_exercise = (
+            feedback_df["exercise_name"]
+            .fillna("")
+            .astype(str)
+            .map(normalize)
+            .eq(exercise_key)
+        )
+
+        recorded_weeks = pd.to_numeric(
+            feedback_df["week_number"],
+            errors="coerce",
+        )
+
+        duplicate = (
+            same_athlete
+            & same_exercise
+            & recorded_weeks.eq(week_number)
+        )
+
+        if duplicate.any():
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Feedback for {saved_feedback.exercise_name} "
+                    f"has already been recorded for Week {week_number}."
+                ),
+            )
+
+    # 5. Save the feedback while preserving older CSV columns.
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        **feedback.model_dump(),
+        **saved_feedback.model_dump(),
         "recommended_action": action,
         "reason": reason,
     }
 
-    file_exists = FEEDBACK_PATH.exists()
+    feedback_df = pd.concat(
+        [feedback_df, pd.DataFrame([record])],
+        ignore_index=True,
+    )
 
-    with FEEDBACK_PATH.open(
-        "a",
-        newline="",
-        encoding="utf-8"
-    ) as file:
-        writer = csv.DictWriter(file, fieldnames=record.keys())
+    feedback_df.to_csv(FEEDBACK_PATH, index=False)
 
-        if not file_exists:
-            writer.writeheader()
+    # 6. Save the next sets/reps prescription.
+    next_prescription = save_adaptive_state(
+        saved_feedback,
+        action,
+    )
 
-        writer.writerow(record)
-        next_prescription = save_adaptive_state(feedback, action)
+    # 7. Store the load action as pending.
+    # Do NOT increase the working load until the whole week is completed.
+    pending_by_week = program_state.setdefault(
+        "pending_load_actions",
+        {},
+    )
 
-        return {
+    pending_actions = pending_by_week.setdefault(
+        str(week_number),
+        {},
+    )
+
+    pending_actions[exercise_key] = action
+
+    save_program_state(
+        saved_feedback.athlete_id,
+        program_state,
+    )
+
+    return {
+        "athlete_id": saved_feedback.athlete_id,
+        "exercise_name": saved_feedback.exercise_name,
+        "week_number": week_number,
         "recommended_action": action,
         "reason": reason,
         "feedback_saved": True,
         "adaptive_state_saved": True,
+        "load_change": "pending_week_completion",
         "next_prescription": {
             "sets": next_prescription["next_sets"],
             "reps": next_prescription["next_reps"],
         },
         "message": (
-            "Feedback recorded. The saved next prescription can be used "
-            "when generating another plan for the same athlete and exercise. "
-            "The recommendation uses explicit rules, not the Random Forest model."
+            "Feedback recorded. The next sets/reps prescription "
+            "has been saved. Any working-load progression will be "
+            "applied when the week is confirmed complete. "
+            "Recommendations use explicit rules, not the "
+            "Random Forest model."
         ),
+    }
+
+@app.post("/complete-week")
+def complete_week(request: CompleteWeekRequest):
+    state = load_program_state(request.athlete_id)
+
+    total_weeks = state.get("weeks")
+
+    if total_weeks is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Generate a programme before completing a week.",
+        )
+
+    current_week = int(state.get("current_week", 1))
+    week_number = request.week_number
+
+    # 1. Validate the requested week.
+    if week_number != current_week:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"The saved current week is {current_week}. "
+                f"Cannot complete Week {week_number}."
+            ),
+        )
+
+    completed_weeks = state.get("completed_weeks", [])
+
+    if week_number in completed_weeks:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Week {week_number} is already completed.",
+        )
+
+    # 2. Get the exercises saved when this week's plan was generated.
+    planned_by_week = state.get("planned_exercises_by_week", {})
+    planned_exercises = planned_by_week.get(str(week_number), [])
+
+    if not planned_exercises:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No saved exercise list exists for this week. "
+                "Generate the current week's plan again before "
+                "recording completion."
+            ),
+        )
+
+    # 3. Read saved workout feedback.
+    if FEEDBACK_PATH.exists():
+        try:
+            feedback_df = pd.read_csv(FEEDBACK_PATH)
+        except (pd.errors.EmptyDataError, pd.errors.ParserError):
+            raise HTTPException(
+                status_code=500,
+                detail="The workout feedback CSV could not be read.",
+            )
+    else:
+        feedback_df = pd.DataFrame()
+
+    required_columns = {
+        "athlete_id",
+        "exercise_name",
+        "week_number",
+    }
+
+    if not required_columns.issubset(feedback_df.columns):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "The feedback file does not contain all required "
+                "columns. Record workout feedback before completing "
+                "this week."
+            ),
+        )
+
+    # 4. Find feedback for this athlete and this specific week.
+    if feedback_df.empty:
+        week_feedback = feedback_df.copy()
+    else:
+        same_athlete = (
+            feedback_df["athlete_id"]
+            .fillna("")
+            .astype(str)
+            .map(normalize)
+            .eq(normalize(request.athlete_id))
+        )
+
+        recorded_weeks = pd.to_numeric(
+            feedback_df["week_number"],
+            errors="coerce",
+        )
+
+        week_feedback = feedback_df[
+            same_athlete & recorded_weeks.eq(week_number)
+        ]
+
+    recorded_exercises = set(
+        week_feedback["exercise_name"]
+        .fillna("")
+        .astype(str)
+        .map(normalize)
+    )
+
+    # 5. Refuse to complete the week if feedback is missing.
+    planned_set = {
+        normalize(name)
+        for name in planned_exercises
+    }
+
+    missing_exercises = sorted(
+        planned_set - recorded_exercises
+    )
+
+    if missing_exercises:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": (
+                    f"Week {week_number} cannot be completed yet. "
+                    "Record feedback for every planned exercise."
+                ),
+                "athlete_id": request.athlete_id,
+                "week_number": week_number,
+                "missing_feedback_count": len(missing_exercises),
+                "missing_exercises": missing_exercises,
+            },
+        )
+
+    # 6. Apply pending load actions only after all feedback exists.
+    current_loads = state.get("current_loads_kg", {})
+    if not isinstance(current_loads, dict):
+        current_loads = {}
+
+    pending_by_week = state.get("pending_load_actions", {})
+    pending_actions = pending_by_week.get(str(week_number), {})
+
+    applied_load_changes = []
+    skipped_load_changes = []
+
+    # Build a lookup so exercise names can match regardless of case.
+    load_keys = {
+        normalize(name): name
+        for name in current_loads
+    }
+
+    for exercise_key, action in pending_actions.items():
+        original_key = load_keys.get(normalize(exercise_key))
+
+        # Do not invent a working load if none has been supplied.
+        if original_key is None or current_loads[original_key] is None:
+            skipped_load_changes.append({
+                "exercise_name": exercise_key,
+                "action": action,
+                "reason": "No working load has been supplied or saved.",
+            })
+            continue
+
+        try:
+            old_load = float(current_loads[original_key])
+        except (TypeError, ValueError):
+            skipped_load_changes.append({
+                "exercise_name": exercise_key,
+                "action": action,
+                "reason": "The saved working load is not numeric.",
+            })
+            continue
+
+        if action not in {"progress", "reduce", "repeat"}:
+            skipped_load_changes.append({
+                "exercise_name": exercise_key,
+                "action": action,
+                "reason": "Unknown load-progression action.",
+            })
+            continue
+
+        new_load = progress_load(old_load, "kg", action)
+        current_loads[original_key] = new_load
+
+        applied_load_changes.append({
+            "exercise_name": original_key,
+            "action": action,
+            "previous_load_kg": old_load,
+            "next_load_kg": new_load,
+        })
+
+    # 7. Save the completed week and the updated loads.
+    completed_weeks.append(week_number)
+    state["completed_weeks"] = sorted(set(completed_weeks))
+    state["current_loads_kg"] = current_loads
+
+    # Remove this week's pending actions so they cannot be applied again.
+    pending_by_week.pop(str(week_number), None)
+    state["pending_load_actions"] = pending_by_week
+
+    if week_number < int(total_weeks):
+        state["current_week"] = week_number + 1
+        message = (
+            f"Week {week_number} completed. "
+            f"Ready for Week {week_number + 1}."
+        )
+    else:
+        state["current_week"] = week_number
+        message = "The final programme week is completed."
+
+    save_program_state(request.athlete_id, state)
+
+    return {
+        "athlete_id": request.athlete_id,
+        "completed_week": week_number,
+        "current_week": state["current_week"],
+        "total_weeks": total_weeks,
+        "completed_weeks": state["completed_weeks"],
+        "programme_finished": week_number >= int(total_weeks),
+        "applied_load_changes": applied_load_changes,
+        "skipped_load_changes": skipped_load_changes,
+        "message": message,
     }
 
 if __name__ == "__main__":
