@@ -1,16 +1,50 @@
 athlete_id,exercise_name,next_sets,next_reps,last_action,updated_at
-demo-athlete,Bench Press (Barbell),3,12,progress,2026-10-22T20:27:17.541258+00:00
-demo-athlete,Lateral Raise (Dumbbell),3,12,progress,2026-10-22T20:27:19.096776+00:00
-demo-athlete,Romanian Deadlift (Barbell),3,12,progress,2026-10-22T20:27:21.253118+00:00
-demo-athlete,Standing Calf Raise,3,12,progress,2026-10-22T20:27:22.883889+00:00
-demo-athlete,Lateral Raise (Cable),3,12,progress,2026-10-22T20:27:24.964853+00:00
-demo-athlete,Squat (Barbell),3,12,progress,2026-10-22T20:27:54.900357+00:00
-demo-athlete,Lat Pulldown,3,12,progress,2026-10-22T20:27:56.047148+00:00
-demo-athlete,Incline Bench Press (Dumbbell),3,12,progress,2026-10-22T20:27:57.724842+00:00
-demo-athlete,Seated Row (Cable),3,12,progress,2026-10-22T20:27:58.855953+00:00
-demo-athlete,Overhead Press (Barbell),3,12,progress,2026-10-22T20:28:01.317055+00:00
-demo-athlete,Leg Extension,3,12,progress,2026-10-22T20:28:06.429212+00:00
-demo-athlete,Deadlift (Barbell),3,12,progress,2026-10-22T20:28:07.943897+00:00
-demo-athlete,Tricep Pushdown (Cable),3,12,progress,2026-10-22T20:28:09.115236+00:00
-demo-athlete,Leg Curl,3,12,progress,2026-10-22T20:28:10.896184+00:00
-demo-athlete,Leg Press,3,12,progress,2026-10-22T20:28:12.631310+00:00
+test2,Bench Press (Barbell),3,11,progress,2026-10-23T12:34:23.123667+00:00
+test2,Lateral Raise (Dumbbell),3,11,progress,2026-10-23T12:34:49.944049+00:00
+test2,Romanian Deadlift (Barbell),3,11,progress,2026-10-23T12:36:01.422440+00:00
+test2,Standing Calf Raise,3,11,progress,2026-10-23T12:36:18.391433+00:00
+test2,Lateral Raise (Cable),3,11,progress,2026-10-23T12:36:33.125967+00:00
+test2,Squat (Barbell),3,11,progress,2026-10-23T12:36:48.394976+00:00
+test2,Lat Pulldown,3,11,progress,2026-10-23T12:37:06.775280+00:00
+test2,Incline Bench Press (Dumbbell),3,11,progress,2026-10-23T12:37:17.288365+00:00
+test2,Seated Row (Cable),3,11,progress,2026-10-23T12:37:28.010054+00:00
+test2,Overhead Press (Barbell),3,11,progress,2026-10-23T12:37:38.694620+00:00
+test2,Leg Extension,3,11,progress,2026-10-23T12:37:48.023264+00:00
+test2,Deadlift (Barbell),2,11,progress,2026-10-23T12:37:58.502941+00:00
+test2,Tricep Pushdown (Cable),3,11,progress,2026-10-23T12:38:08.103270+00:00
+test2,Leg Curl,3,11,progress,2026-10-23T12:38:22.590889+00:00
+test2,Leg Press,3,11,progress,2026-10-23T12:38:31.825373+00:00
+athlete,Bench Press (Barbell),1,1,reduce,2026-10-23T12:45:34.889262+00:00
+test,Bench Press (Barbell),3,11,progress,2026-10-23T12:57:50.953382+00:00
+test,Squat (Barbell),3,11,progress,2026-10-23T12:58:28.231474+00:00
+test,Lat Pulldown,3,11,progress,2026-10-23T12:58:40.190641+00:00
+test,Incline Bench Press (Dumbbell),3,11,progress,2026-10-23T12:59:00.640872+00:00
+test,Leg Extension,3,11,progress,2026-10-23T12:59:05.616696+00:00
+test,Deadlift (Barbell),2,11,progress,2026-10-23T12:59:19.599438+00:00
+test,Tricep Pushdown (Cable),3,11,progress,2026-10-23T12:59:29.127113+00:00
+test,romanian deadlift (barbell),3,11,progress,2026-10-23T13:00:08.896819+00:00
+test,lateral raise (dumbbell),3,11,progress,2026-10-23T13:00:50.914835+00:00
+demo-athlete,Bench Press (Barbell),1,13,progress,2026-10-23T13:02:40.279852+00:00
+demo-athlete,Lateral Raise (Dumbbell),1,13,progress,2026-10-23T13:02:43.047477+00:00
+demo-athlete,Romanian Deadlift (Barbell),1,13,progress,2026-10-23T13:02:48.733593+00:00
+demo-athlete,Standing Calf Raise,1,13,progress,2026-10-23T13:02:51.197350+00:00
+demo-athlete,Lateral Raise (Cable),1,13,progress,2026-10-23T13:02:55.960694+00:00
+demo-athlete,Squat (Barbell),1,13,progress,2026-10-23T13:03:10.828833+00:00
+demo-athlete,Lat Pulldown,1,13,progress,2026-10-23T13:03:12.098705+00:00
+demo-athlete,Incline Bench Press (Dumbbell),1,13,progress,2026-10-23T13:03:13.835173+00:00
+demo-athlete,Seated Row (Cable),1,13,progress,2026-10-23T13:03:15.041297+00:00
+demo-athlete,Overhead Press (Barbell),1,13,progress,2026-10-23T13:03:16.587873+00:00
+demo-athlete,Leg Extension,1,13,progress,2026-10-23T13:03:36.729688+00:00
+demo-athlete,Deadlift (Barbell),1,13,progress,2026-10-23T13:03:38.626510+00:00
+demo-athlete,Tricep Pushdown (Cable),1,13,progress,2026-10-23T13:03:40.048778+00:00
+demo-athlete,Leg Curl,1,13,progress,2026-10-23T13:03:42.044297+00:00
+demo-athlete,Leg Press,1,13,progress,2026-10-23T13:03:43.917774+00:00
+Sathi,Bench Press (Barbell),3,11,progress,2026-10-23T13:38:53.974555+00:00
+Sathi,Lateral Raise (Dumbbell),3,11,progress,2026-10-23T13:39:50.424162+00:00
+Sathi,Romanian Deadlift (Barbell),3,11,progress,2026-10-23T13:43:25.563810+00:00
+Sathi,Squat (Barbell),3,11,progress,2026-10-23T13:43:42.575735+00:00
+Sathi,Lat Pulldown,3,11,progress,2026-10-23T13:43:56.130932+00:00
+Sathi,Incline Bench Press (Dumbbell),3,11,progress,2026-10-23T13:44:12.227400+00:00
+Sathi,Leg Extension,3,11,progress,2026-10-23T13:44:28.285323+00:00
+Sathi,Deadlift (Barbell),2,11,progress,2026-10-23T13:44:41.419514+00:00
+Sathi,Tricep Pushdown (Cable),3,11,progress,2026-10-23T13:44:52.625259+00:00
