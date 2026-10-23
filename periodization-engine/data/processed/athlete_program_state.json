@@ -12,7 +12,7 @@
     "current_loads_kg": {
       "bench press (barbell)": 43.07
     },
-    "updated_at": "2026-10-23T13:09:25.516164+00:00",
+    "updated_at": "2026-10-23T14:30:20.858934+00:00",
     "planned_exercises_by_week": {
       "1": [
         "bench press (barbell)",
@@ -162,7 +162,7 @@
     "current_week": 1,
     "completed_weeks": [],
     "current_loads_kg": {},
-    "updated_at": "2026-10-23T12:45:34.897332+00:00",
+    "updated_at": "2026-10-23T14:39:08.115205+00:00",
     "planned_exercises_by_week": {
       "1": [
         "bench press (barbell)",
@@ -185,22 +185,65 @@
   "sathi": {
     "athlete_id": "Sathi",
     "weeks": 4,
-    "current_week": 2,
+    "current_week": 3,
     "completed_weeks": [
-      1
+      1,
+      2
     ],
-    "current_loads_kg": {},
-    "updated_at": "2026-10-23T13:45:24.164665+00:00",
+    "current_loads_kg": {
+      "bench press (barbell)": 40.0
+    },
+    "updated_at": "2026-10-23T14:57:53.975456+00:00",
     "planned_exercises_by_week": {
       "1": [
         "bench press (barbell)",
         "deadlift (barbell)",
         "incline bench press (dumbbell)",
         "lat pulldown",
+        "lateral raise (cable)",
         "lateral raise (dumbbell)",
+        "leg curl",
         "leg extension",
+        "leg press",
+        "overhead press (barbell)",
         "romanian deadlift (barbell)",
+        "seated row (cable)",
         "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "2": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "3": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
         "tricep pushdown (cable)"
       ]
     },

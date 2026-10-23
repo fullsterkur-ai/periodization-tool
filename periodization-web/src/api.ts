@@ -64,10 +64,9 @@ async function apiRequest<T>(
   return data as T;
 }
 
+
 export function generatePlan(settings: AthleteSettings) {
-  return apiRequest<Record<string, any>>("/generate-plan", {
-    athlete: settings,
-  });
+  return apiRequest<Record<string, any>>("/generate-plan", settings);
 }
 
 export function submitWorkoutFeedback(feedback: WorkoutFeedback) {

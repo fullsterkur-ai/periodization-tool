@@ -95,3 +95,18 @@ timestamp,athlete_id,exercise_name,goal,experience,planned_sets,planned_reps,com
 2026-10-23T13:44:28.278623+00:00,Sathi,Leg Extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
 2026-10-23T13:44:41.410850+00:00,Sathi,Deadlift (Barbell),strength,beginner,2,10,2,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
 2026-10-23T13:44:52.618022+00:00,Sathi,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T14:55:56.853887+00:00,Sathi,Bench Press (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:55:59.389606+00:00,Sathi,Lateral Raise (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:01.834572+00:00,Sathi,Standing Calf Raise,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:04.180169+00:00,Sathi,Lateral Raise (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:08.969330+00:00,Sathi,Squat (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:10.426924+00:00,Sathi,Incline Bench Press (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:11.543090+00:00,Sathi,Lat Pulldown,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:13.290837+00:00,Sathi,Seated Row (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:14.615243+00:00,Sathi,Overhead Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:20.888917+00:00,Sathi,Leg Extension,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:22.028031+00:00,Sathi,Deadlift (Barbell),strength,beginner,2,11,2,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:23.442935+00:00,Sathi,Tricep Pushdown (Cable),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:25.399487+00:00,Sathi,Leg Curl,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:26.761773+00:00,Sathi,Leg Press,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:57:22.820798+00:00,Sathi,Romanian Deadlift (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0

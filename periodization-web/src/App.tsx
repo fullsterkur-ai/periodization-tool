@@ -85,7 +85,9 @@ function App() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  const weekData = plan?.weeks?.[0];
+  const weekData =
+  plan?.weeks?.find((week) => week.week === athlete.week_number) ??
+  plan?.weeks?.[0];
   const sessions = weekData?.sessions ?? [];
   const session = sessions[selectedDay];
   const currentWeek = weekData?.week ?? athlete.week_number;
@@ -107,9 +109,15 @@ function App() {
   }
 
   async function loadPlan(weekNumber = athlete.week_number) {
-    setLoading(true);
-    setError("");
-    setMessage("");
+    if (!athlete.athlete_id.trim()) {
+    setError("Please enter an athlete ID.");
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+  setMessage("");
+
 
     try {
       const settings = {
@@ -119,9 +127,28 @@ function App() {
 
       const result = (await generatePlan(settings)) as PlanResponse;
 
+      console.log("Requested athlete:", settings.athlete_id);
+      console.log("Backend returned athlete:", result.athlete);
+      console.log("Backend returned plan:", result);
+
+      // Detect a mismatch instead of displaying another athlete's plan.
+      const returnedAthleteId = result.athlete?.athlete_id;
+
+      if (
+        typeof returnedAthleteId === "string" &&
+        returnedAthleteId.trim().toLowerCase() !==
+          settings.athlete_id.trim().toLowerCase()
+      ) {
+        throw new Error(
+          `Athlete mismatch: requested "${settings.athlete_id}", ` +
+          `but the backend returned "${returnedAthleteId}". ` +
+          `Check the backend athlete lookup and saved programme state.`
+        );
+      }
+
       setPlan(result);
       setAthlete(settings);
-      setSelectedDay(0);
+
       setFeedbackValues({});
       setSubmittedFeedback([]);
       setMessage(`Week ${result.weeks[0]?.week ?? weekNumber} loaded successfully.`);
@@ -195,7 +222,20 @@ function App() {
       setLoading(false);
     }
   }
+function switchAthlete(athleteId: string) {
+  setAthlete((previous) => ({
+    ...previous,
+    athlete_id: athleteId,
+    week_number: 1,
+  }));
 
+  setPlan(null);
+  setSelectedDay(0);
+  setFeedbackValues({});
+  setSubmittedFeedback([]);
+  setError("");
+  setMessage("");
+}
   async function finishWeek() {
     if (!plan) return;
 
@@ -303,9 +343,9 @@ function App() {
                 Athlete ID
                 <input
                   value={athlete.athlete_id}
-                  onChange={(e) =>
-                    setAthlete({ ...athlete, athlete_id: e.target.value })
-                  }
+                  onChange={(e) => switchAthlete(e.target.value)}
+                  placeholder="Enter athlete ID"
+                  maxLength={100}
                 />
               </label>
 
