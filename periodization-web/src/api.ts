@@ -1,38 +1,13 @@
+import type {
+  AthleteSettings,
+  WorkoutFeedback,
+  FeedbackResponse,
+  CompleteWeekResponse,
+  PlanResponse,
+} from "./types";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-
-export type AthleteSettings = {
-  athlete_id: string;
-  goal: string;
-  experience: string;
-  equipment: string;
-  days_per_week: number;
-  weeks: number;
-  week_number: number;
-  exercises_per_session: number;
-  starting_loads_kg: Record<string, number>;
-  fatigue: number;
-  performance_declining: boolean;
-  simulation_completed_all_sets: boolean;
-  simulation_completed_target_reps: boolean;
-  simulation_effort: number;
-  excluded_exercises: string[];
-  restriction_notes: string;
-};
-
-export type WorkoutFeedback = {
-  athlete_id: string;
-  exercise_name: string;
-  goal: string;
-  experience: string;
-  planned_sets: number;
-  planned_reps: number;
-  completed_sets: number;
-  average_completed_reps: number;
-  effort: number;
-  week_number: number;
-};
 
 async function apiRequest<T>(
   endpoint: string,
@@ -51,6 +26,7 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const detail = data?.detail;
+
     const errorMessage =
       typeof detail === "string"
         ? detail
@@ -64,13 +40,17 @@ async function apiRequest<T>(
   return data as T;
 }
 
-
-export function generatePlan(settings: AthleteSettings) {
-  return apiRequest<Record<string, any>>("/generate-plan", settings);
+export function generatePlan(
+  settings: AthleteSettings
+): Promise<PlanResponse> {
+  // Send the athlete settings directly.
+  return apiRequest<PlanResponse>("/generate-plan", settings);
 }
 
-export function submitWorkoutFeedback(feedback: WorkoutFeedback) {
-  return apiRequest<Record<string, any>>(
+export function submitWorkoutFeedback(
+  feedback: WorkoutFeedback
+): Promise<FeedbackResponse> {
+  return apiRequest<FeedbackResponse>(
     "/workout-feedback",
     feedback
   );
@@ -79,8 +59,8 @@ export function submitWorkoutFeedback(feedback: WorkoutFeedback) {
 export function completeWeek(
   athlete_id: string,
   week_number: number
-) {
-  return apiRequest<Record<string, any>>("/complete-week", {
+): Promise<CompleteWeekResponse> {
+  return apiRequest<CompleteWeekResponse>("/complete-week", {
     athlete_id,
     week_number,
   });

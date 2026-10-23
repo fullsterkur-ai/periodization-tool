@@ -4,45 +4,15 @@ import {
   generatePlan,
   submitWorkoutFeedback,
   completeWeek,
-  type AthleteSettings,
-  type WorkoutFeedback,
 } from "./api";
 
-type Exercise = {
-  exercise_name: string;
-  sets: number;
-  reps: number;
-  dataset_intensity_0_10?: number;
-  load_kg: number | null;
-  progression_action?: string;
-  progression_reason?: string;
-  load_progression_status?: string;
-  prescription_source?: string;
-};
-
-type Session = {
-  day: number;
-  exercises: Exercise[];
-};
-
-type PlanResponse = {
-  athlete: Record<string, any>;
-  programme: {
-    total_weeks: number;
-    requested_week: number;
-    saved_current_week: number;
-    completed_weeks: number[];
-    week_completed: boolean;
-  };
-  weeks: {
-    week: number;
-    phase: string;
-    is_deload: boolean;
-    phase_note: string;
-    sessions: Session[];
-  }[];
-  limitations?: string[];
-};
+import type {
+  AthleteSettings,
+  WorkoutFeedback,
+  Exercise,
+  PlanResponse,
+  FeedbackValues,
+} from "./types";
 
 const defaultAthlete: AthleteSettings = {
   athlete_id: "demo-athlete",
@@ -63,12 +33,6 @@ const defaultAthlete: AthleteSettings = {
   simulation_effort: 6,
   excluded_exercises: [],
   restriction_notes: "",
-};
-
-type FeedbackValues = {
-  completed_sets: number;
-  average_completed_reps: number;
-  effort: number;
 };
 
 function App() {
@@ -125,7 +89,7 @@ function App() {
         week_number: weekNumber,
       };
 
-      const result = (await generatePlan(settings)) as PlanResponse;
+      const result = await generatePlan(settings);
 
       console.log("Requested athlete:", settings.athlete_id);
       console.log("Backend returned athlete:", result.athlete);

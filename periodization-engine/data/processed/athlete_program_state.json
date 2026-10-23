@@ -248,5 +248,52 @@
       ]
     },
     "pending_load_actions": {}
+  },
+  "ted": {
+    "athlete_id": "Ted",
+    "weeks": 4,
+    "current_week": 1,
+    "completed_weeks": [],
+    "current_loads_kg": {
+      "bench press (barbell)": 40.0
+    },
+    "updated_at": "2026-10-23T15:08:58.750569+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {
+      "1": {
+        "bench press (barbell)": "progress",
+        "lateral raise (dumbbell)": "progress",
+        "incline bench press (dumbbell)": "progress",
+        "tricep pushdown (cable)": "progress",
+        "overhead press (barbell)": "progress",
+        "squat (barbell)": "progress",
+        "lat pulldown": "progress",
+        "romanian deadlift (barbell)": "progress",
+        "leg curl": "progress",
+        "lateral raise (cable)": "progress",
+        "leg extension": "progress",
+        "deadlift (barbell)": "progress",
+        "seated row (cable)": "progress",
+        "leg press": "progress"
+      }
+    }
   }
 }
