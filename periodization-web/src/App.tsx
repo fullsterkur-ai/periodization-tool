@@ -1,111 +1,238 @@
-
 import { useState } from "react";
 import "./App.css";
+import ModelTraining from "./ModelTraining";
+import {
+  generatePlan,
+  submitWorkoutFeedback,
+  completeWeek,
+} from "./api";
 
-type Exercise = {
-  name: string;
-  sets: number;
-  reps: string;
-  intensity: string;
+import type {
+  AthleteSettings,
+  WorkoutFeedback,
+  Exercise,
+  PlanResponse,
+  FeedbackValues,
+} from "./types";
+
+const defaultAthlete: AthleteSettings = {
+  athlete_id: "demo-athlete",
+  goal: "strength",
+  experience: "beginner",
+  equipment: "Full Gym",
+  days_per_week: 3,
+  weeks: 8,
+  week_number: 2,
+  exercises_per_session: 5,
+  starting_loads_kg: {
+    "Bench Press (Barbell)": 40,
+  },
+  fatigue: 3,
+  performance_declining: false,
+  simulation_completed_all_sets: true,
+  simulation_completed_target_reps: true,
+  simulation_effort: 6,
+  excluded_exercises: [],
+  restriction_notes: "",
 };
-
-type Workout = {
-  day: string;
-  title: string;
-  focus: string;
-  duration: string;
-  exercises: Exercise[];
-};
-
-const workouts: Workout[] = [
-  {
-    day: "MON",
-    title: "Lower Body A",
-    focus: "Strength",
-    duration: "55 min",
-    exercises: [
-      { name: "Barbell Back Squat", sets: 4, reps: "6", intensity: "75%" },
-      { name: "Romanian Deadlift", sets: 3, reps: "8", intensity: "70%" },
-      { name: "Leg Press", sets: 3, reps: "10", intensity: "65%" },
-      { name: "Plank", sets: 3, reps: "45 sec", intensity: "Bodyweight" },
-    ],
-  },
-  {
-    day: "TUE",
-    title: "Upper Body A",
-    focus: "Strength",
-    duration: "50 min",
-    exercises: [
-      { name: "Bench Press", sets: 4, reps: "6", intensity: "75%" },
-      { name: "Barbell Row", sets: 4, reps: "8", intensity: "70%" },
-      { name: "Overhead Press", sets: 3, reps: "8", intensity: "65%" },
-    ],
-  },
-  {
-    day: "WED",
-    title: "Recovery",
-    focus: "Active recovery",
-    duration: "25 min",
-    exercises: [
-      { name: "Light Cycling", sets: 1, reps: "15 min", intensity: "Easy" },
-      { name: "Mobility Work", sets: 1, reps: "10 min", intensity: "Easy" },
-    ],
-  },
-  {
-    day: "THU",
-    title: "Lower Body B",
-    focus: "Hypertrophy",
-    duration: "55 min",
-    exercises: [
-      { name: "Deadlift", sets: 3, reps: "5", intensity: "80%" },
-      { name: "Bulgarian Split Squat", sets: 3, reps: "10/leg", intensity: "65%" },
-      { name: "Leg Curl", sets: 3, reps: "12", intensity: "60%" },
-    ],
-  },
-  {
-    day: "FRI",
-    title: "Upper Body B",
-    focus: "Hypertrophy",
-    duration: "50 min",
-    exercises: [
-      { name: "Incline Dumbbell Press", sets: 3, reps: "10", intensity: "65%" },
-      { name: "Lat Pulldown", sets: 3, reps: "10", intensity: "65%" },
-      { name: "Lateral Raise", sets: 3, reps: "12", intensity: "Light" },
-    ],
-  },
-  {
-    day: "SAT",
-    title: "Optional Activity",
-    focus: "Conditioning",
-    duration: "30 min",
-    exercises: [
-      { name: "Walking or Cycling", sets: 1, reps: "30 min", intensity: "Easy" },
-    ],
-  },
-  {
-    day: "SUN",
-    title: "Rest Day",
-    focus: "Recovery",
-    duration: "Rest",
-    exercises: [
-      { name: "Rest and Recovery", sets: 0, reps: "—", intensity: "—" },
-    ],
-  },
-];
-
-const phases = [
-  { week: "W1", name: "Foundation", type: "Accumulation", status: "complete" },
-  { week: "W2", name: "Volume Build", type: "Accumulation", status: "complete" },
-  { week: "W3", name: "Progression", type: "Intensification", status: "current" },
-  { week: "W4", name: "Deload", type: "Recovery", status: "upcoming" },
-  { week: "W5", name: "Strength Build", type: "Intensification", status: "upcoming" },
-  { week: "W6", name: "Peak Week", type: "Realization", status: "upcoming" },
-];
 
 function App() {
+  const [activePage, setActivePage] = useState("Training Plan");
+  const [athlete, setAthlete] =
+    useState<AthleteSettings>(defaultAthlete);
+  const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
-  const [activePage, setActivePage] = useState("Overview");
-  const workout = workouts[selectedDay];
+  const [feedbackValues, setFeedbackValues] =
+    useState<Record<string, FeedbackValues>>({});
+  const [submittedFeedback, setSubmittedFeedback] =
+    useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const weekData =
+  plan?.weeks?.find((week) => week.week === athlete.week_number) ??
+  plan?.weeks?.[0];
+  const sessions = weekData?.sessions ?? [];
+  const session = sessions[selectedDay];
+  const currentWeek = weekData?.week ?? athlete.week_number;
+  const totalWeeks = plan?.programme?.total_weeks ?? athlete.weeks;
+  const completedWeeks = plan?.programme?.completed_weeks ?? [];
+
+  function exerciseKey(exercise: Exercise) {
+    return `${currentWeek}:${exercise.exercise_name.toLowerCase()}`;
+  }
+
+  function getFeedback(exercise: Exercise): FeedbackValues {
+    const key = exerciseKey(exercise);
+
+    return feedbackValues[key] ?? {
+      completed_sets: exercise.sets,
+      average_completed_reps: exercise.reps,
+      effort: 6,
+    };
+  }
+
+  async function loadPlan(weekNumber = athlete.week_number) {
+    if (!athlete.athlete_id.trim()) {
+    setError("Please enter an athlete ID.");
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+  setMessage("");
+
+
+    try {
+      const settings = {
+        ...athlete,
+        week_number: weekNumber,
+      };
+
+      const result = await generatePlan(settings);
+
+      console.log("Requested athlete:", settings.athlete_id);
+      console.log("Backend returned athlete:", result.athlete);
+      console.log("Backend returned plan:", result);
+
+      // Detect a mismatch instead of displaying another athlete's plan.
+      const returnedAthleteId = result.athlete?.athlete_id;
+
+      if (
+        typeof returnedAthleteId === "string" &&
+        returnedAthleteId.trim().toLowerCase() !==
+          settings.athlete_id.trim().toLowerCase()
+      ) {
+        throw new Error(
+          `Athlete mismatch: requested "${settings.athlete_id}", ` +
+          `but the backend returned "${returnedAthleteId}". ` +
+          `Check the backend athlete lookup and saved programme state.`
+        );
+      }
+
+      setPlan(result);
+      setAthlete(settings);
+
+      setFeedbackValues({});
+      setSubmittedFeedback([]);
+      setMessage(`Week ${result.weeks[0]?.week ?? weekNumber} loaded successfully.`);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not generate the plan."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function updateFeedback(
+    exercise: Exercise,
+    field: keyof FeedbackValues,
+    value: number
+  ) {
+    const key = exerciseKey(exercise);
+    const current = getFeedback(exercise);
+
+    setFeedbackValues((previous) => ({
+      ...previous,
+      [key]: {
+        ...current,
+        [field]: value,
+      },
+    }));
+  }
+
+  async function recordFeedback(exercise: Exercise) {
+    const key = exerciseKey(exercise);
+
+    if (submittedFeedback.includes(key)) {
+      setMessage("Feedback has already been submitted for this exercise.");
+      return;
+    }
+
+    const values = getFeedback(exercise);
+
+    const payload: WorkoutFeedback = {
+      athlete_id: athlete.athlete_id,
+      exercise_name: exercise.exercise_name,
+      goal: athlete.goal,
+      experience: athlete.experience,
+      planned_sets: exercise.sets,
+      planned_reps: exercise.reps,
+      completed_sets: values.completed_sets,
+      average_completed_reps: values.average_completed_reps,
+      effort: values.effort,
+      week_number: currentWeek,
+    };
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const result = await submitWorkoutFeedback(payload);
+
+      setSubmittedFeedback((previous) => [...previous, key]);
+      setMessage(
+        `${exercise.exercise_name}: feedback saved. Recommended action: ${
+          result.recommended_action ?? "recorded"
+        }.`
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not submit feedback."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+function switchAthlete(athleteId: string) {
+  setAthlete((previous) => ({
+    ...previous,
+    athlete_id: athleteId,
+    week_number: 1,
+  }));
+
+  setPlan(null);
+  setSelectedDay(0);
+  setFeedbackValues({});
+  setSubmittedFeedback([]);
+  setError("");
+  setMessage("");
+}
+  async function finishWeek() {
+    if (!plan) return;
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const result = await completeWeek(
+        athlete.athlete_id,
+        currentWeek
+      );
+
+      setMessage(result.message ?? `Week ${currentWeek} completed.`);
+
+      const nextWeek = result.current_week;
+
+      if (nextWeek && nextWeek <= totalWeeks) {
+        await loadPlan(nextWeek);
+      } else {
+        setMessage("Programme completed!");
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not complete this week."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -120,29 +247,22 @@ function App() {
 
         <p className="nav-label">WORKSPACE</p>
 
-        {["Overview", "Training Plan", "Periodization", "Exercise Library", "Progress"].map(
+        {["Overview", "Training Plan", "Periodization", "Model Training","Progress"].map(
           (item) => (
             <button
               key={item}
               className={`nav-item ${activePage === item ? "active" : ""}`}
               onClick={() => setActivePage(item)}
             >
-              <span>{{
-                Overview: "◈",
-                "Training Plan": "▤",
-                Periodization: "◷",
-                "Exercise Library": "▦",
-                Progress: "↗",
-              }[item]}</span>
               {item}
             </button>
           )
         )}
 
         <div className="sidebar-bottom">
-          <div className="demo-tag">DEMO MODE</div>
-          <p>Sample athlete data</p>
-          <small>Periodization Module · v1.0</small>
+          <div className="demo-tag">API CONNECTED</div>
+          <p>{athlete.athlete_id}</p>
+          <small>FastAPI periodization engine</small>
         </div>
       </aside>
 
@@ -153,197 +273,395 @@ function App() {
             <strong>{activePage}</strong>
           </div>
           <div className="profile">
-            <div className="avatar">AJ</div>
+            <div className="avatar">A</div>
             <div>
-              <strong>Alex Johnson</strong>
-              <small>Intermediate athlete</small>
+              <strong>{athlete.athlete_id}</strong>
+              <small>{athlete.experience} athlete</small>
             </div>
           </div>
         </header>
 
-        {activePage === "Exercise Library" ? (
-          <section className="page">
-            <p className="eyebrow">EXERCISE LIBRARY</p>
-            <h1>Exercise collection</h1>
-            <p className="muted">Exercises included in the demonstration program.</p>
-            <div className="exercise-library">
-              {[...new Set(workouts.flatMap(w => w.exercises.map(e => e.name)))].map(name => (
-                <div className="library-item" key={name}>
-                  <span className="exercise-icon">✦</span>
-                  <strong>{name}</strong>
-                  <span className="muted">Strength training</span>
-                </div>
-              ))}
+        <section className="page">
+  {activePage === "Model Training" ? (
+    <ModelTraining />
+  ) : (
+    <>
+      <div className="page-heading">
+            <div>
+              <p className="eyebrow">PERSONALIZED TRAINING</p>
+              <h1>{activePage}</h1>
+              <p className="muted">
+                Training prescriptions and progression from your backend.
+              </p>
             </div>
-          </section>
-        ) : activePage === "Progress" ? (
-          <section className="page">
-            <p className="eyebrow">TRAINING ANALYTICS</p>
-            <h1>Progress overview</h1>
-            <p className="muted">Illustrative progress indicators for the demo athlete.</p>
+
+            <button
+              className="outline-button"
+              disabled={loading}
+              onClick={() => loadPlan(athlete.week_number)}
+            >
+              {loading ? "Please wait..." : "Generate / Refresh Plan"}
+            </button>
+          </div>
+
+          <div className="panel">
+            <h3>Athlete and programme settings</h3>
+
             <div className="stats-grid">
-              <Stat label="Sessions completed" value="12 / 18" change="67% of planned sessions" />
-              <Stat label="Program adherence" value="89%" change="Sample metric" />
-              <Stat label="Training block" value="Week 3" change="Of a 6-week block" />
+              <label>
+                Athlete ID
+                <input
+                  value={athlete.athlete_id}
+                  onChange={(e) => switchAthlete(e.target.value)}
+                  placeholder="Enter athlete ID"
+                  maxLength={100}
+                />
+              </label>
+
+              <label>
+                Goal
+                <select
+                  value={athlete.goal}
+                  onChange={(e) =>
+                    setAthlete({ ...athlete, goal: e.target.value })
+                  }
+                >
+                  <option value="strength">Strength</option>
+                  <option value="hypertrophy">Hypertrophy</option>
+                  <option value="general_fitness">General fitness</option>
+                </select>
+              </label>
+
+              <label>
+                Experience
+                <select
+                  value={athlete.experience}
+                  onChange={(e) =>
+                    setAthlete({ ...athlete, experience: e.target.value })
+                  }
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </label>
+
+              <label>
+                Training days per week
+                <input
+                  type="number"
+                  min={2}
+                  max={6}
+                  value={athlete.days_per_week}
+                  onChange={(e) =>
+                    setAthlete({
+                      ...athlete,
+                      days_per_week: Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                Programme duration (weeks)
+                <input
+                  type="number"
+                  min={4}
+                  max={12}
+                  value={athlete.weeks}
+                  onChange={(e) =>
+                    setAthlete({
+                      ...athlete,
+                      weeks: Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                Week to generate
+                <input
+                  type="number"
+                  min={1}
+                  max={athlete.weeks}
+                  value={athlete.week_number}
+                  onChange={(e) =>
+                    setAthlete({
+                      ...athlete,
+                      week_number: Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
             </div>
+
+            <button
+              className="outline-button"
+              disabled={loading}
+              onClick={() => loadPlan(athlete.week_number)}
+            >
+              Generate plan for selected week
+            </button>
+          </div>
+
+          {error && (
+            <div className="panel" role="alert">
+              <strong>Request failed</strong>
+              <p>{error}</p>
+            </div>
+          )}
+
+          {message && (
+            <div className="panel" role="status">
+              {message}
+            </div>
+          )}
+
+          {!plan && (
             <div className="panel">
-              <h3>Program progression</h3>
-              <div className="progress-track"><div style={{ width: "50%" }} /></div>
-              <p className="muted">3 of 6 weeks represented in the current demo.</p>
+              <h3>Your training plan will appear here</h3>
+              <p className="muted">
+                Generate a plan to load real exercises from FastAPI.
+              </p>
             </div>
-          </section>
-        ) : activePage === "Periodization" ? (
-          <section className="page">
-            <p className="eyebrow">TRAINING STRUCTURE</p>
-            <h1>Periodization timeline</h1>
-            <p className="muted">Illustrative six-week training block.</p>
-            <div className="phase-list">
-              {phases.map((phase) => (
-                <div className={`phase-row ${phase.status}`} key={phase.week}>
-                  <div className="phase-week">{phase.week}</div>
-                  <div className="phase-info">
-                    <strong>{phase.name}</strong>
-                    <small>{phase.type}</small>
-                  </div>
-                  <span className="status-pill">{phase.status}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : (
-          <section className="page">
-            <div className="page-heading">
-              <div>
-                <p className="eyebrow">ATHLETE WORKSPACE / 2026</p>
-                <h1>{activePage === "Training Plan" ? "Your training plan" : "Training overview"}</h1>
-                <p className="muted">
-                  Your training schedule, phase progression and workout prescriptions.
-                </p>
-              </div>
-              <button className="outline-button" onClick={() => window.print()}>
-                Export / Print ↗
-              </button>
-            </div>
+          )}
 
-            <div className="welcome-banner">
-              <div>
-                <span className="banner-label">CURRENT TRAINING BLOCK</span>
-                <h2>Build strength. Train smarter.</h2>
-                <p>A structured six-week program focused on strength development.</p>
-                <div className="banner-meta">
-                  <span>◷ 6 weeks</span>
-                  <span>♧ 5 training days</span>
-                  <span>✦ Intermediate</span>
+          {plan && (
+            <>
+              <div className="welcome-banner">
+                <div>
+                  <span className="banner-label">CURRENT TRAINING BLOCK</span>
+                  <h2>Week {currentWeek} — {weekData?.phase}</h2>
+                  <p>{weekData?.phase_note}</p>
+                  <div className="banner-meta">
+                    <span>{totalWeeks} total weeks</span>
+                    <span>{sessions.length} sessions</span>
+                    <span>{athlete.goal}</span>
+                  </div>
                 </div>
               </div>
-              <div className="banner-art">↗</div>
-            </div>
 
-            <div className="stats-grid">
-              <Stat label="CURRENT WEEK" value="03 / 06" change="Progression phase" />
-              <Stat label="CURRENT PHASE" value="Build" change="Intensification" />
-              <Stat label="PLANNED SESSIONS" value="5 days" change="Per training week" />
-              <Stat label="NEXT DELOAD" value="Week 04" change="Reduced training stress" />
-            </div>
-
-            <div className="section-heading">
-              <div>
-                <h2>Periodization timeline</h2>
-                <p className="muted">Your training focus changes across the block.</p>
+              <div className="stats-grid">
+                <Stat
+                  label="CURRENT WEEK"
+                  value={`${currentWeek} / ${totalWeeks}`}
+                  change="Loaded from the API"
+                />
+                <Stat
+                  label="COMPLETED WEEKS"
+                  value={String(completedWeeks.length)}
+                  change="Saved programme state"
+                />
+                <Stat
+                  label="TRAINING SESSIONS"
+                  value={String(sessions.length)}
+                  change="For this generated week"
+                />
+                <Stat
+                  label="PHASE"
+                  value={weekData?.phase ?? "—"}
+                  change={weekData?.is_deload ? "Deload week" : "Training phase"}
+                />
               </div>
-              <span className="small-chip">6-WEEK PROGRAM</span>
-            </div>
 
-            <div className="phase-grid">
-              {phases.map((phase) => (
-                <div className={`phase-card ${phase.status}`} key={phase.week}>
-                  <div className="phase-card-top">
-                    <span>{phase.week}</span>
-                    {phase.status === "current" && <span className="live-dot">● CURRENT</span>}
-                    {phase.status === "complete" && <span className="check">✓</span>}
-                  </div>
-                  <strong>{phase.name}</strong>
-                  <p>{phase.type}</p>
-                  <div className="phase-bar"><div /></div>
+              <div className="section-heading">
+                <div>
+                  <h2>Weekly training schedule</h2>
+                  <p className="muted">
+                    Select a session to view its prescribed exercises.
+                  </p>
                 </div>
-              ))}
-            </div>
-
-            <div className="section-heading">
-              <div>
-                <h2>Weekly training schedule</h2>
-                <p className="muted">Select a day to view its exercise prescriptions.</p>
-              </div>
-              <span className="small-chip">WEEK 03</span>
-            </div>
-
-            <div className="schedule-layout">
-              <div className="day-list">
-                {workouts.map((item, index) => (
-                  <button
-                    key={item.day}
-                    className={`day-card ${selectedDay === index ? "selected" : ""}`}
-                    onClick={() => setSelectedDay(index)}
-                  >
-                    <div className="day-date">{item.day}</div>
-                    <div className="day-info">
-                      <strong>{item.title}</strong>
-                      <small>{item.focus}</small>
-                    </div>
-                    <span className="day-arrow">›</span>
-                  </button>
-                ))}
+                <span className="small-chip">WEEK {currentWeek}</span>
               </div>
 
-              <div className="workout-panel">
-                <div className="workout-heading">
-                  <div>
-                    <p className="eyebrow">{workout.day} / WEEK 03</p>
-                    <h3>{workout.title}</h3>
-                    <p className="muted">{workout.focus} · {workout.duration}</p>
-                  </div>
-                  <span className="workout-symbol">✦</span>
-                </div>
-
-                <div className="exercise-table">
-                  <div className="table-head">
-                    <span>EXERCISE</span>
-                    <span>SETS</span>
-                    <span>REPS</span>
-                    <span>INTENSITY</span>
-                  </div>
-                  {workout.exercises.map((exercise, index) => (
-                    <div className="exercise-row" key={exercise.name}>
-                      <div className="exercise-name">
-                        <span className="exercise-number">{String(index + 1).padStart(2, "0")}</span>
-                        <strong>{exercise.name}</strong>
+              <div className="schedule-layout">
+                <div className="day-list">
+                  {sessions.map((item, index) => (
+                    <button
+                      key={item.day}
+                      className={`day-card ${
+                        selectedDay === index ? "selected" : ""
+                      }`}
+                      onClick={() => setSelectedDay(index)}
+                    >
+                      <div className="day-date">DAY {item.day}</div>
+                      <div className="day-info">
+                        <strong>Session {item.day}</strong>
+                        <small>{item.exercises.length} exercises</small>
                       </div>
-                      <span>{exercise.sets || "—"}</span>
-                      <span>{exercise.reps}</span>
-                      <span className="intensity">{exercise.intensity}</span>
-                    </div>
+                      <span className="day-arrow">›</span>
+                    </button>
                   ))}
                 </div>
 
-                <div className="workout-note">
-                  <span>ⓘ</span>
-                  <p>
-                    <strong>Prescription note</strong>
-                    <br />
-                    Percentages are illustrative demo targets, not personalized
-                    prescriptions. Adjust based on the athlete's assessed capacity.
-                  </p>
-                </div>
+                {session && (
+                  <div className="workout-panel">
+                    <div className="workout-heading">
+                      <div>
+                        <p className="eyebrow">
+                          DAY {session.day} / WEEK {currentWeek}
+                        </p>
+                        <h3>Training session {session.day}</h3>
+                        <p className="muted">{weekData?.phase}</p>
+                      </div>
+                      <span className="workout-symbol">✦</span>
+                    </div>
+
+                    <div className="exercise-table">
+                      <div className="table-head">
+                        <span>EXERCISE</span>
+                        <span>SETS</span>
+                        <span>REPS</span>
+                        <span>LOAD</span>
+                      </div>
+
+                      {session.exercises.map((exercise, index) => {
+                        const key = exerciseKey(exercise);
+                        const values = getFeedback(exercise);
+                        const submitted = submittedFeedback.includes(key);
+
+                        return (
+                          <div className="exercise-row" key={exercise.exercise_name}>
+                            <div className="exercise-name">
+                              <span className="exercise-number">
+                                {String(index + 1).padStart(2, "0")}
+                              </span>
+                              <strong>{exercise.exercise_name}</strong>
+                            </div>
+
+                            <span>{exercise.sets}</span>
+                            <span>{exercise.reps}</span>
+                            <span className="intensity">
+                              {exercise.load_kg == null
+                                ? "Not set"
+                                : `${exercise.load_kg} kg`}
+                            </span>
+
+                            <div className="feedback-controls">
+                              <label>
+                                Completed sets
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={exercise.sets}
+                                  value={values.completed_sets}
+                                  disabled={submitted}
+                                  onChange={(e) =>
+                                    updateFeedback(
+                                      exercise,
+                                      "completed_sets",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              <label>
+                                Average reps completed
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={50}
+                                  value={values.average_completed_reps}
+                                  disabled={submitted}
+                                  onChange={(e) =>
+                                    updateFeedback(
+                                      exercise,
+                                      "average_completed_reps",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              <label>
+                                Effort (1–10)
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={10}
+                                  value={values.effort}
+                                  disabled={submitted}
+                                  onChange={(e) =>
+                                    updateFeedback(
+                                      exercise,
+                                      "effort",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              <button
+                                className="outline-button"
+                                disabled={loading || submitted}
+                                onClick={() => recordFeedback(exercise)}
+                              >
+                                {submitted ? "Feedback saved" : "Submit feedback"}
+                              </button>
+
+                              <small className="muted">
+                                Intensity scale:{" "}
+                                {exercise.dataset_intensity_0_10 ?? "Not provided"}
+                                /10
+                              </small>
+
+                              {exercise.load_progression_status && (
+                                <small className="muted">
+                                  Load status: {exercise.load_progression_status}
+                                </small>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          </section>
-        )}
-      </main>
-    </div>
-  );
+
+              <div className="panel">
+                <h3>Complete week {currentWeek}</h3>
+                <p className="muted">
+                  Submit feedback for every exercise in the planned week first.
+                  The backend will reject completion if feedback is missing.
+                  Only confirm completion after the week's workouts have
+                  actually been performed and recorded.
+                </p>
+                <button
+                  className="outline-button"
+                  disabled={loading}
+                  onClick={finishWeek}
+                >
+                  {loading ? "Processing..." : `Confirm Week ${currentWeek} Complete`}
+                </button>
+              </div>
+
+              {plan.limitations && (
+                <div className="panel">
+                  <h3>Research prototype limitations</h3>
+                  <ul>
+                    {plan.limitations.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+                  )}
+    </>
+  )}
+      </section>
+    </main>
+  </div>
+);
 }
 
-function Stat({ label, value, change }: {
+function Stat({
+  label,
+  value,
+  change,
+}: {
   label: string;
   value: string;
   change: string;

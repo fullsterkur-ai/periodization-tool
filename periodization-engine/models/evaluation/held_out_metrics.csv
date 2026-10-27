@@ -1,0 +1,3 @@
+target,curve_training_rows,held_out_test_rows,held_out_test_program_titles,held_out_mae,held_out_rmse
+sets,30000,123741,520,0.9129660761953189,1.1770401443910279
+reps,30000,120164,520,3.2723843565755084,4.718849145658158

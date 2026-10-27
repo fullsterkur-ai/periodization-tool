@@ -1,0 +1,299 @@
+{
+  "demo-athlete": {
+    "athlete_id": "demo-athlete",
+    "weeks": 8,
+    "current_week": 5,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "current_loads_kg": {
+      "bench press (barbell)": 43.07
+    },
+    "updated_at": "2026-10-23T14:30:20.858934+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "2": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "3": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "4": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "5": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {}
+  },
+  "test": {
+    "athlete_id": "test",
+    "weeks": 4,
+    "current_week": 2,
+    "completed_weeks": [
+      1
+    ],
+    "current_loads_kg": {},
+    "updated_at": "2026-10-23T13:00:54.164157+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (dumbbell)",
+        "leg extension",
+        "romanian deadlift (barbell)",
+        "squat (barbell)",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {}
+  },
+  "test2": {
+    "athlete_id": "test2",
+    "weeks": 4,
+    "current_week": 2,
+    "completed_weeks": [
+      1
+    ],
+    "current_loads_kg": {},
+    "updated_at": "2026-10-23T12:38:51.177035+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {}
+  },
+  "athlete": {
+    "athlete_id": "athlete",
+    "weeks": 4,
+    "current_week": 1,
+    "completed_weeks": [],
+    "current_loads_kg": {},
+    "updated_at": "2026-10-23T14:39:08.115205+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (dumbbell)",
+        "leg extension",
+        "romanian deadlift (barbell)",
+        "squat (barbell)",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {
+      "1": {
+        "bench press (barbell)": "reduce"
+      }
+    }
+  },
+  "sathi": {
+    "athlete_id": "Sathi",
+    "weeks": 4,
+    "current_week": 3,
+    "completed_weeks": [
+      1,
+      2
+    ],
+    "current_loads_kg": {
+      "bench press (barbell)": 40.0
+    },
+    "updated_at": "2026-10-23T14:57:53.975456+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "2": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ],
+      "3": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {}
+  },
+  "ted": {
+    "athlete_id": "Ted",
+    "weeks": 4,
+    "current_week": 1,
+    "completed_weeks": [],
+    "current_loads_kg": {
+      "bench press (barbell)": 40.0
+    },
+    "updated_at": "2026-10-23T15:08:58.750569+00:00",
+    "planned_exercises_by_week": {
+      "1": [
+        "bench press (barbell)",
+        "deadlift (barbell)",
+        "incline bench press (dumbbell)",
+        "lat pulldown",
+        "lateral raise (cable)",
+        "lateral raise (dumbbell)",
+        "leg curl",
+        "leg extension",
+        "leg press",
+        "overhead press (barbell)",
+        "romanian deadlift (barbell)",
+        "seated row (cable)",
+        "squat (barbell)",
+        "standing calf raise",
+        "tricep pushdown (cable)"
+      ]
+    },
+    "pending_load_actions": {
+      "1": {
+        "bench press (barbell)": "progress",
+        "lateral raise (dumbbell)": "progress",
+        "incline bench press (dumbbell)": "progress",
+        "tricep pushdown (cable)": "progress",
+        "overhead press (barbell)": "progress",
+        "squat (barbell)": "progress",
+        "lat pulldown": "progress",
+        "romanian deadlift (barbell)": "progress",
+        "leg curl": "progress",
+        "lateral raise (cable)": "progress",
+        "leg extension": "progress",
+        "deadlift (barbell)": "progress",
+        "seated row (cable)": "progress",
+        "leg press": "progress"
+      }
+    }
+  }
+}

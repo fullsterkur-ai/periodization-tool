@@ -1,0 +1,126 @@
+timestamp,athlete_id,exercise_name,goal,experience,planned_sets,planned_reps,completed_sets,average_completed_reps,effort,recommended_action,reason,week_number
+2026-10-19T18:43:02.628699+00:00,string,string,strength,beginner,1,1,10,50.0,1,progress,The planned work was completed without a very high effort rating.,
+2026-10-20T18:32:17.323057+00:00,demo-athlete,Bench Press (Barbell),strength,beginner,3,9,3,9.0,6,progress,The planned work was completed without a very high effort rating.,
+2026-10-22T14:12:14.800900+00:00,demo-athlete,Bench Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:28:27.468041+00:00,demo-athlete,Seated Row (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:36:49.288043+00:00,demo-athlete,Deadlift (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:37:26.780059+00:00,demo-athlete,Incline Bench Press (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:37:44.375848+00:00,demo-athlete,Lat Pulldown,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:37:56.706234+00:00,demo-athlete,Lateral Raise (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:38:07.447574+00:00,demo-athlete,Lateral Raise (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:38:17.188369+00:00,demo-athlete,Leg Curl,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:38:27.352941+00:00,demo-athlete,Leg Extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:38:40.078395+00:00,demo-athlete,Leg Press,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:38:50.221978+00:00,demo-athlete,Overhead Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:39:00.345861+00:00,demo-athlete,Romanian Deadlift (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:39:12.819813+00:00,demo-athlete,Squat (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:39:26.915920+00:00,demo-athlete,Standing Calf Raise,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:39:38.255007+00:00,demo-athlete,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-22T16:50:56.124161+00:00,demo-athlete,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:52:15.798501+00:00,demo-athlete,standing calf raise,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:52:36.609470+00:00,demo-athlete,squat (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:52:55.143893+00:00,demo-athlete,seated row (cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:53:07.662619+00:00,demo-athlete,overhead press (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:53:22.449698+00:00,demo-athlete,leg press,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:53:35.399770+00:00,demo-athlete,leg extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:53:44.287944+00:00,demo-athlete,leg curl,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:54:02.890895+00:00,demo-athlete,lateral raise (dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:54:17.343783+00:00,demo-athlete,lateral raise (cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:54:28.372114+00:00,demo-athlete,lat pulldown,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:54:39.531962+00:00,demo-athlete,incline bench press (dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:54:54.197291+00:00,demo-athlete,deadlift (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:55:04.084253+00:00,demo-athlete,bench press (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T16:55:35.377384+00:00,demo-athlete,romanian deadlift (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-22T20:27:17.531675+00:00,demo-athlete,Bench Press (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:19.091660+00:00,demo-athlete,Lateral Raise (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:21.246833+00:00,demo-athlete,Romanian Deadlift (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:22.879246+00:00,demo-athlete,Standing Calf Raise,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:24.959651+00:00,demo-athlete,Lateral Raise (Cable),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:54.894589+00:00,demo-athlete,Squat (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:56.042620+00:00,demo-athlete,Lat Pulldown,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:57.720910+00:00,demo-athlete,Incline Bench Press (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:27:58.850756+00:00,demo-athlete,Seated Row (Cable),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:01.311294+00:00,demo-athlete,Overhead Press (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:06.424652+00:00,demo-athlete,Leg Extension,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:07.938903+00:00,demo-athlete,Deadlift (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:09.110724+00:00,demo-athlete,Tricep Pushdown (Cable),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:10.890955+00:00,demo-athlete,Leg Curl,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-22T20:28:12.623183+00:00,demo-athlete,Leg Press,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,3.0
+2026-10-23T12:34:23.105621+00:00,test2,Bench Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:34:49.938186+00:00,test2,Lateral Raise (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:36:01.417936+00:00,test2,Romanian Deadlift (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:36:18.386534+00:00,test2,Standing Calf Raise,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:36:33.113978+00:00,test2,Lateral Raise (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:36:48.388996+00:00,test2,Squat (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:06.769323+00:00,test2,Lat Pulldown,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:17.272068+00:00,test2,Incline Bench Press (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:28.004166+00:00,test2,Seated Row (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:38.682946+00:00,test2,Overhead Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:48.017563+00:00,test2,Leg Extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:37:58.498481+00:00,test2,Deadlift (Barbell),strength,beginner,2,10,2,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:38:08.097227+00:00,test2,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:38:22.585006+00:00,test2,Leg Curl,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:38:31.820597+00:00,test2,Leg Press,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:45:34.880564+00:00,athlete,Bench Press (Barbell),strength,beginner,1,1,0,0.0,1,reduce,Not all planned sets were completed.,1.0
+2026-10-23T12:57:50.947062+00:00,test,Bench Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:58:28.223732+00:00,test,Squat (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:58:40.185321+00:00,test,Lat Pulldown,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:59:00.634945+00:00,test,Incline Bench Press (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:59:05.611457+00:00,test,Leg Extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:59:19.594191+00:00,test,Deadlift (Barbell),strength,beginner,2,10,2,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T12:59:29.121316+00:00,test,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:00:08.891743+00:00,test,romanian deadlift (barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:00:50.908038+00:00,test,lateral raise (dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:02:40.269979+00:00,demo-athlete,Bench Press (Barbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:02:43.040430+00:00,demo-athlete,Lateral Raise (Dumbbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:02:48.726766+00:00,demo-athlete,Romanian Deadlift (Barbell),strength,beginner,1,12,1,12.0,5,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:02:51.190297+00:00,demo-athlete,Standing Calf Raise,strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:02:55.957072+00:00,demo-athlete,Lateral Raise (Cable),strength,beginner,1,12,1,12.0,8,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:10.820544+00:00,demo-athlete,Squat (Barbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:12.091783+00:00,demo-athlete,Lat Pulldown,strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:13.825182+00:00,demo-athlete,Incline Bench Press (Dumbbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:15.036220+00:00,demo-athlete,Seated Row (Cable),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:16.583610+00:00,demo-athlete,Overhead Press (Barbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:36.723356+00:00,demo-athlete,Leg Extension,strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:38.620453+00:00,demo-athlete,Deadlift (Barbell),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:40.043064+00:00,demo-athlete,Tricep Pushdown (Cable),strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:42.037649+00:00,demo-athlete,Leg Curl,strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:03:43.912003+00:00,demo-athlete,Leg Press,strength,beginner,1,12,1,12.0,6,progress,The planned work was completed without a very high effort rating.,4.0
+2026-10-23T13:38:53.967298+00:00,Sathi,Bench Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:39:50.417352+00:00,Sathi,Lateral Raise (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:43:25.557465+00:00,Sathi,Romanian Deadlift (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:43:42.568849+00:00,Sathi,Squat (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:43:56.126053+00:00,Sathi,Lat Pulldown,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:44:12.221249+00:00,Sathi,Incline Bench Press (Dumbbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:44:28.278623+00:00,Sathi,Leg Extension,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:44:41.410850+00:00,Sathi,Deadlift (Barbell),strength,beginner,2,10,2,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T13:44:52.618022+00:00,Sathi,Tricep Pushdown (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T14:55:56.853887+00:00,Sathi,Bench Press (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:55:59.389606+00:00,Sathi,Lateral Raise (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:01.834572+00:00,Sathi,Standing Calf Raise,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:04.180169+00:00,Sathi,Lateral Raise (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:08.969330+00:00,Sathi,Squat (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:10.426924+00:00,Sathi,Incline Bench Press (Dumbbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:11.543090+00:00,Sathi,Lat Pulldown,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:13.290837+00:00,Sathi,Seated Row (Cable),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:14.615243+00:00,Sathi,Overhead Press (Barbell),strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:20.888917+00:00,Sathi,Leg Extension,strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:22.028031+00:00,Sathi,Deadlift (Barbell),strength,beginner,2,11,2,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:23.442935+00:00,Sathi,Tricep Pushdown (Cable),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:25.399487+00:00,Sathi,Leg Curl,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:56:26.761773+00:00,Sathi,Leg Press,strength,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T14:57:22.820798+00:00,Sathi,Romanian Deadlift (Barbell),strength,beginner,3,11,3,11.0,6,progress,The planned work was completed without a very high effort rating.,2.0
+2026-10-23T15:08:30.367384+00:00,Ted,Bench Press (Barbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:34.029619+00:00,Ted,Lateral Raise (Dumbbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:35.264018+00:00,Ted,Incline Bench Press (Dumbbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:37.056749+00:00,Ted,Tricep Pushdown (Cable),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:38.202142+00:00,Ted,Overhead Press (Barbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:43.824399+00:00,Ted,Squat (Barbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:45.545257+00:00,Ted,Lat Pulldown,hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:47.124004+00:00,Ted,Romanian Deadlift (Barbell),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:48.261411+00:00,Ted,Leg Curl,hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:49.811903+00:00,Ted,Lateral Raise (Cable),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:54.765169+00:00,Ted,Leg Extension,hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:55.815429+00:00,Ted,Deadlift (Barbell),hypertrophy,beginner,2,10,2,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:57.305343+00:00,Ted,Seated Row (Cable),hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
+2026-10-23T15:08:58.739010+00:00,Ted,Leg Press,hypertrophy,beginner,3,10,3,10.0,6,progress,The planned work was completed without a very high effort rating.,1.0
